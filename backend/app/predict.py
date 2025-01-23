@@ -1,8 +1,7 @@
-# app/predict.py
 from app.crud import fetch_driver_stats, fetch_team_stats
+from app.models import Driver, Team
 
 def prepare_feature_vector(driver_id: int, team_id: int):
-    """Prepare the feature vector for model prediction."""
     driver_stats = fetch_driver_stats(driver_id)
     team_stats = fetch_team_stats(team_id)
     

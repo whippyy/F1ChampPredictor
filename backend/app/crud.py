@@ -1,38 +1,27 @@
-# app/crud.py
-from sqlalchemy.orm import Session
-from app import models, schemas
 from app.database import db_session
-from app.models import Driver, Team
+from app.models import Driver  # Assuming you have a Driver model defined
 
-def create_driver(db: Session, driver: schemas.DriverCreate):
-    db_driver = models.Driver(**driver.dict())
-    db.add(db_driver)
-    db.commit()
-    db.refresh(db_driver)
-    return db_driver
+def add_driver_from_api(driver_data):
+    for driver in driver_data:
+        db_driver = Driver(
+            id=driver['id'],
+            name=driver['name'],
+            team=driver['team'],
+            nationality=driver['nationality'],
+            # Add other fields as necessary, based on the data returned by the API
+        )
+        db_session.add(db_driver)
+    
+    db_session.commit()
 
-def get_driver(db: Session, driver_id: int):
-    return db.query(models.Driver).filter(models.Driver.id == driver_id).first()
-
+# Example functions to fetch driver stats and team stats
 def fetch_driver_stats(driver_id: int):
-    """Fetch historical performance data for a driver."""
-    driver = db_session.query(Driver).filter(Driver.id == driver_id).first()
-    if driver:
-        return {
-            "total_points": driver.total_points,
-            "total_races": driver.total_races,
-            # You can return other relevant stats
-        }
-    return None
+    return db_session.query(Driver).filter(Driver.id == driver_id).first()
 
 def fetch_team_stats(team_id: int):
-    """Fetch historical performance data for a team."""
-    team = db_session.query(Team).filter(Team.id == team_id).first()
-    if team:
-        return {
-            "total_points": team.total_points,
-            "total_wins": team.total_wins,
-            # You can return other relevant stats
-        }
-    return None
+    return db_session.query(Team).filter(Team.id == team_id).first()
+
+
+
+
 

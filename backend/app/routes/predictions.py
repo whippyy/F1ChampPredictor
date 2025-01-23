@@ -20,16 +20,13 @@ class PredictionResponse(BaseModel):
 
 router = APIRouter()
 
-@router.post("/predict", response_model=PredictionResponse)
-async def predict(request: PredictionRequest):
-    # Prepare feature vector
-    feature_vector = prepare_feature_vector(request.driver_id, request.team_id)
-    
+@router.get("/predict")
+def predict(driver_id: int, team_id: int):
+    feature_vector = prepare_feature_vector(driver_id, team_id)
     if feature_vector:
-        # Make prediction
-        prediction = model.predict([feature_vector])
-        return PredictionResponse(prediction=str(prediction[0]))
-    else:
-        return {"error": "Could not fetch stats or prepare feature vector."}
+        # Run the model prediction here with feature_vector
+        prediction = "some prediction logic"  # Replace with actual model prediction
+        return {"prediction": prediction}
+    return {"error": "Failed to prepare feature vector"}
 
 

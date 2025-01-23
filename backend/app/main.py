@@ -1,4 +1,3 @@
-# app/main.py
 from fastapi import FastAPI
 from app.routes import predictions, drivers, teams
 
@@ -16,3 +15,4 @@ app.include_router(teams.router, prefix="/teams", tags=["Teams"])
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the F1 Championship Predictor API!"}
+

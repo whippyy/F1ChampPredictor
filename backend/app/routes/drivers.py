@@ -1,14 +1,24 @@
+# app/routes/drivers.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app import models, schemas, crud
-from app.database import get_db
+from app.crud import fetch_driver_stats, fetch_team_stats
+from app.database import get_db  # Ensure you import get_db
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.Driver)
-def create_driver(driver: schemas.DriverCreate, db: Session = Depends(get_db)):
-    return crud.create_driver(db=db, driver=driver)
+@router.get("/{driver_id}/features")
+def get_driver_features(driver_id: int, db: Session = Depends(get_db)):
+    """Fetch the combined feature vector for a given driver."""
+    driver_stats = fetch_driver_stats(driver_id, db)
+    team_stats = fetch_team_stats(driver_id, db)  # Example, adjust as needed
 
-@router.get("/{driver_id}", response_model=schemas.Driver)
-def read_driver(driver_id: int, db: Session = Depends(get_db)):
-    return crud.get_driver(db=db, driver_id=driver_id)
+    if driver_stats and team_stats:
+        feature_vector = [
+            driver_stats['total_points'],
+            driver_stats['total_races'],
+            team_stats['total_points'],
+            team_stats['total_wins']
+        ]
+        return feature_vector
+    return {"error": "Driver or team data not found"}
+
