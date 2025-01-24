@@ -1,18 +1,10 @@
 from fastapi import FastAPI
-from app.routes import predictions, drivers, teams
+from app.routes import data, predictions
 
-app = FastAPI(
-    title="F1 Championship Predictor",
-    description="An API to predict F1 championship outcomes using machine learning.",
-    version="1.0.0",
-)
+app = FastAPI()
 
-# Include the route modules
-app.include_router(predictions.router, prefix="/predictions", tags=["Predictions"])
-app.include_router(drivers.router, prefix="/drivers", tags=["Drivers"])
-app.include_router(teams.router, prefix="/teams", tags=["Teams"])
+# Register routers
+app.include_router(data.router)
+app.include_router(predictions.router)
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the F1 Championship Predictor API!"}
 

@@ -1,25 +1,56 @@
-from app.database import db_session
-from app.models import Driver  # Assuming you have a Driver model defined
+from app.database import SessionLocal
+from app.models import Driver, Team
+from app.services.openf1 import fetch_drivers, fetch_teams
+from sqlalchemy.orm import Session
 
-def add_driver_from_api(driver_data):
+def add_drivers():
+    """Fetch drivers from OpenF1 and save to the database."""
+    driver_data = fetch_drivers()
+    if not driver_data:
+        return "Failed to fetch driver data."
+    
+    db = SessionLocal()
     for driver in driver_data:
         db_driver = Driver(
             id=driver['id'],
             name=driver['name'],
-            team=driver['team'],
             nationality=driver['nationality'],
-            # Add other fields as necessary, based on the data returned by the API
+            team=driver['constructor']
         )
-        db_session.add(db_driver)
+        db.add(db_driver)
+    db.commit()
+    db.close()
+    return "Drivers added successfully."
+
+def add_teams():
+    """Fetch teams from OpenF1 and save to the database."""
+    team_data = fetch_teams()
+    if not team_data:
+        return "Failed to fetch team data."
     
-    db_session.commit()
+    db = SessionLocal()
+    for team in team_data:
+        db_team = Team(
+            id=team['id'],
+            name=team['name'],
+            nationality=team['nationality']
+        )
+        db.add(db_team)
+    db.commit()
+    db.close()
+    return "Teams added successfully."
 
-# Example functions to fetch driver stats and team stats
-def fetch_driver_stats(driver_id: int):
-    return db_session.query(Driver).filter(Driver.id == driver_id).first()
+def fetch_driver_stats(db: Session, driver_id: int):
+    """Fetches statistics for a specific driver."""
+    return db.query(Driver).filter(Driver.id == driver_id).first()
 
-def fetch_team_stats(team_id: int):
-    return db_session.query(Team).filter(Team.id == team_id).first()
+def fetch_team_stats(db: Session, team_id: int):
+    """Fetches statistics for a specific team."""
+    from app.models import Team
+    return db.query(Team).filter(Team.id == team_id).first()
+
+
+
 
 
 
