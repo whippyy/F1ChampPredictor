@@ -2,6 +2,7 @@ from app.database import SessionLocal
 from app.models import Driver, Team
 from app.services.openf1 import fetch_drivers, fetch_teams
 from sqlalchemy.orm import Session
+from app.data_loader import data
 
 def add_drivers():
     """Fetch drivers from OpenF1 and save to the database."""

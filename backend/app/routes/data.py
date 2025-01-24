@@ -14,3 +14,5 @@ def populate_teams():
     """Populate teams from OpenF1 into the database."""
     result = add_teams()
     return {"message": result}
+
+

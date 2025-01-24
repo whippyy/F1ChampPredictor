@@ -1,4 +1,3 @@
-# app/routes/drivers.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.crud import fetch_driver_stats, fetch_team_stats
@@ -19,6 +18,6 @@ def get_driver_features(driver_id: int, db: Session = Depends(get_db)):
             team_stats['total_points'],
             team_stats['total_wins']
         ]
-        return feature_vector
+        return {"feature_vector": feature_vector}
     return {"error": "Driver or team data not found"}
 

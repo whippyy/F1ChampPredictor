@@ -1,10 +1,13 @@
 from fastapi import FastAPI
-from app.routes import data, predictions
+from app.routes import data, drivers, predictions, teams
 
 app = FastAPI()
 
-# Register routers
-app.include_router(data.router)
-app.include_router(predictions.router)
+# Include routers
+app.include_router(data.router, prefix="/data", tags=["Data"])
+app.include_router(drivers.router, prefix="/drivers", tags=["Drivers"])
+app.include_router(predictions.router, prefix="/predictions", tags=["Predictions"])
+app.include_router(teams.router, prefix="/teams", tags=["Teams"])
+
 
 
