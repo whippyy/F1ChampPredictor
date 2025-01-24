@@ -1,8 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.crud import add_teams
+from app.database import get_db
 
 router = APIRouter()
 
-@router.get("/")
-async def get_teams():
-    return {"message": "Teams endpoint is working!"}  # Placeholder for now
+@router.get("/populate/teams")
+def populate_teams(db: Session = Depends(get_db)):
+    result = add_teams(db)
+    return {"message": result}
+
 

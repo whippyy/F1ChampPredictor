@@ -1,18 +1,12 @@
 from fastapi import APIRouter
-from app.crud import add_drivers, add_teams
+from app.data_loader import get_data
 
 router = APIRouter()
 
-@router.get("/populate/drivers", tags=["Data Population"])
-def populate_drivers():
-    """Populate drivers from OpenF1 into the database."""
-    result = add_drivers()
-    return {"message": result}
+@router.get("/circuits")
+async def get_circuits():
+    circuits_data = get_data('circuits')
+    return circuits_data.to_dict(orient='records')  # Convert DataFrame to dictionary format
 
-@router.get("/populate/teams", tags=["Data Population"])
-def populate_teams():
-    """Populate teams from OpenF1 into the database."""
-    result = add_teams()
-    return {"message": result}
 
 

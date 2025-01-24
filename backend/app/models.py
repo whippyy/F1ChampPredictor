@@ -1,20 +1,18 @@
-# app/models.py
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String
 from app.database import Base
 
 class Driver(Base):
-    __tablename__ = 'drivers'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    team = Column(String)
-    points = Column(Float)
+    __tablename__ = "drivers"
 
-class Team(Base):
-    __tablename__ = 'teams'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    total_points = Column(Float)
-    total_wins = Column(Integer)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    nationality = Column(String)
+
+class Constructor(Base):
+    __tablename__ = "constructors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    nationality = Column(String)
+
 
