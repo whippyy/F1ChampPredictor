@@ -1,12 +1,22 @@
 from fastapi import APIRouter
 from app.data_loader import get_data
+from pydantic import BaseModel
+
+# Define a response model to include a message and the data
+class CircuitResponse(BaseModel):
+    message: str
+    data: list
 
 router = APIRouter()
 
-@router.get("/circuits")
+@router.get("/circuits", tags=["Data Fetching"], response_model=CircuitResponse)
 async def get_circuits():
     circuits_data = get_data('circuits')
-    return circuits_data.to_dict(orient='records')  # Convert DataFrame to dictionary format
+    if circuits_data is not None:
+        return CircuitResponse(message="Circuits data fetched successfully", data=circuits_data.to_dict(orient='records'))
+    return CircuitResponse(message="No data found for circuits.", data=[])
+
+
 
 
 

@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from app import models
-import pandas as pd 
+import pandas as pd
+from app.schemas import ResponseMessage  # Import the response schema
 
 # Function to add drivers to the database
 def add_drivers(db: Session):
-    # Example: Insert data from CSV into the database
     drivers_data = pd.read_csv('app/data/drivers.csv')
     for index, row in drivers_data.iterrows():
         db.add(models.Driver(name=row['name'], nationality=row['nationality']))
@@ -27,6 +27,14 @@ def fetch_driver_stats(driver_id: int, db: Session):
 def fetch_team_stats(driver_id: int, db: Session):
     driver = db.query(models.Driver).filter(models.Driver.id == driver_id).first()
     return db.query(models.Constructor).filter(models.Constructor.id == driver.team_id).first()
+
+# Updated function to return ResponseMessage
+def add_drivers_with_message(db: Session):
+    drivers_data = pd.read_csv('app/data/drivers.csv')
+    for index, row in drivers_data.iterrows():
+        db.add(models.Driver(name=row['name'], nationality=row['nationality']))
+    db.commit()
+    return ResponseMessage(message="Successfully populated drivers.")
 
 
 
