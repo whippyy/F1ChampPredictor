@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class Driver(Base):
@@ -15,12 +16,10 @@ class Driver(Base):
     # Define the relationship if you have a team model
     team = relationship("Constructor", back_populates="drivers")
 
-
 class Constructor(Base):
     __tablename__ = "constructors"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     nationality = Column(String)
-
 
