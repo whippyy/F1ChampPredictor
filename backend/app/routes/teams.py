@@ -1,19 +1,16 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 from app.crud import add_teams
-from pydantic import BaseModel
-
-class ResponseMessage(BaseModel):
-    message: str
+from app.database import get_db
+from app.schemas import ResponseMessage
 
 router = APIRouter()
 
 @router.get("/populate/teams", tags=["Data Population"], response_model=ResponseMessage)
-def populate_teams():
+def populate_teams(db: Session = Depends(get_db)):
     """Populate teams from OpenF1 into the database."""
-    result = add_teams()  # Assuming this returns the number of teams added
-    if result:
-        return ResponseMessage(message=f"Successfully populated {result} teams.")
-    return ResponseMessage(message="Failed to populate teams.")
+    result = add_teams(db)
+    return ResponseMessage(message=result)
 
 
 
