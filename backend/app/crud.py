@@ -10,9 +10,8 @@ def add_drivers(db: Session):
         for index, row in drivers_data.iterrows():
             db.add(models.Driver(
                 code=row['code'],
-                team_id=row['team_id'],
                 nationality=row['nationality'],
-                full_name=row['full_name'],
+                full_name=f"{row['forename']} {row['surname']}",  # Combining names
                 dob=row['dob'],
                 url=row['url']
             ))
@@ -48,6 +47,7 @@ def fetch_team_stats(driver_id: int, db: Session):
 def add_drivers_with_message(db: Session):
     result = add_drivers(db)
     return ResponseMessage(message=result)
+
 
 
 
