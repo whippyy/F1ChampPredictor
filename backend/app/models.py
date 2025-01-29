@@ -8,14 +8,13 @@ class Driver(Base):
     id = Column(Integer, primary_key=True, index=True)
     driver_id = Column(Integer, unique=True, index=True)
     driver_ref = Column(String)
-    number = Column(Integer)
+    number = Column(Integer, nullable=True)  # Allow NULL if no number
     code = Column(String, unique=True, index=True)
     forename = Column(String)
     surname = Column(String)
     dob = Column(Date)
     nationality = Column(String)
     url = Column(String)
-
 
 class Constructor(Base):
     __tablename__ = "constructors"
@@ -26,6 +25,7 @@ class Constructor(Base):
     name = Column(String)
     nationality = Column(String)
     url = Column(String)
+
 
 
 

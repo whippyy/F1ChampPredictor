@@ -9,8 +9,12 @@ router = APIRouter()
 @router.get("/populate/teams", tags=["Data Population"], response_model=ResponseMessage)
 def populate_teams(db: Session = Depends(get_db)):
     """Populate teams from OpenF1 into the database."""
-    result = add_teams(db)
-    return ResponseMessage(message=result)
+    try:
+        result = add_teams(db)
+        return ResponseMessage(message=result)
+    except Exception as e:
+        return ResponseMessage(message=f"Error populating teams: {str(e)}")
+
 
 
 

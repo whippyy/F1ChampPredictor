@@ -10,6 +10,10 @@ def add_drivers(db: Session):
     with open('path_to_drivers.csv', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
+            # Replace '\N' with None (for missing data)
+            if row['number'] == '\\N':
+                row['number'] = None  # or row['number'] = np.nan for pandas if using it
+            
             driver = Driver(
                 driver_id=row['driverId'],
                 driver_ref=row['driverRef'],
@@ -24,6 +28,7 @@ def add_drivers(db: Session):
             db.add(driver)
         db.commit()
     return "Drivers added successfully"
+
 
 
 def add_constructors(db: Session):
@@ -41,20 +46,6 @@ def add_constructors(db: Session):
         db.commit()
     return "Constructors added successfully"
 
-# In app/crud.py
-def add_teams(db_session, team_data):
-    # Function to add teams to the database
-    team = Team(**team_data)
-    db_session.add(team)
-    db_session.commit()
-    return team
-
-def add_drivers_with_message(db_session, driver_data):
-    # Function to add drivers with a message
-    driver = Driver(**driver_data)
-    db_session.add(driver)
-    db_session.commit()
-    return {"message": "Driver added successfully", "driver": driver}
 
 
 

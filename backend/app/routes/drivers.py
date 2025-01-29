@@ -10,8 +10,12 @@ router = APIRouter()
 @router.get("/populate/drivers", tags=["Data Population"], response_model=ResponseMessage)
 def populate_drivers(db: Session = Depends(get_db)):
     """Populate drivers from OpenF1 into the database."""
-    result = add_drivers_with_message(db)  # Get the result as a message
-    return result  # Response will be formatted with message
+    try:
+        result = add_drivers_with_message(db)  # Get the result as a message
+        return result  # Response will be formatted with message
+    except Exception as e:
+        return ResponseMessage(message=f"Error populating drivers: {str(e)}")
+
 
 
 
