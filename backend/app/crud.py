@@ -2,7 +2,6 @@
 from app.models import Driver, Constructor  # Make sure this import is correct
 from sqlalchemy.orm import Session
 import csv
-from app.crud import add_teams
 
 # Define your add_drivers and add_constructors functions here
 
@@ -45,6 +44,10 @@ def add_constructors(db: Session):
             db.add(constructor)
         db.commit()
     return "Constructors added successfully"
+
+
+
+
 
 
 
