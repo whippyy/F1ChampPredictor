@@ -1,52 +1,60 @@
+# app/crud.py
+from app.models import Driver, Constructor  # Make sure this import is correct
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from app import models
-import pandas as pd
-from app.schemas import ResponseMessage
+import csv
+from app.crud import add_teams
+
+# Define your add_drivers and add_constructors functions here
 
 def add_drivers(db: Session):
-    try:
-        drivers_data = pd.read_csv('app/data/drivers.csv')
-        for index, row in drivers_data.iterrows():
-            db.add(models.Driver(
+    with open('path_to_drivers.csv', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            driver = Driver(
+                driver_id=row['driverId'],
+                driver_ref=row['driverRef'],
+                number=row['number'],
                 code=row['code'],
-                nationality=row['nationality'],
-                full_name=f"{row['forename']} {row['surname']}",  # Combining names
+                forename=row['forename'],
+                surname=row['surname'],
                 dob=row['dob'],
+                nationality=row['nationality'],
                 url=row['url']
-            ))
+            )
+            db.add(driver)
         db.commit()
-        return "Drivers added successfully."
-    except SQLAlchemyError as e:
-        db.rollback()
-        return f"Error adding drivers: {e}"
+    return "Drivers added successfully"
 
-def add_teams(db: Session):
-    try:
-        constructors_data = pd.read_csv('app/data/constructors.csv')
-        for index, row in constructors_data.iterrows():
-            db.add(models.Constructor(
+
+def add_constructors(db: Session):
+    with open('path_to_constructors.csv', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            constructor = Constructor(
+                constructor_id=row['constructorId'],
+                constructor_ref=row['constructorRef'],
                 name=row['name'],
-                nationality=row['nationality']
-            ))
+                nationality=row['nationality'],
+                url=row['url']
+            )
+            db.add(constructor)
         db.commit()
-        return "Teams added successfully."
-    except SQLAlchemyError as e:
-        db.rollback()
-        return f"Error adding teams: {e}"
+    return "Constructors added successfully"
 
-def fetch_driver_stats(driver_id: int, db: Session):
-    return db.query(models.Driver).filter(models.Driver.id == driver_id).first()
+# In app/crud.py
+def add_teams(db_session, team_data):
+    # Function to add teams to the database
+    team = Team(**team_data)
+    db_session.add(team)
+    db_session.commit()
+    return team
 
-def fetch_team_stats(driver_id: int, db: Session):
-    driver = db.query(models.Driver).filter(models.Driver.id == driver_id).first()
-    if driver:
-        return db.query(models.Constructor).filter(models.Constructor.id == driver.team_id).first()
-    return None
-
-def add_drivers_with_message(db: Session):
-    result = add_drivers(db)
-    return ResponseMessage(message=result)
+def add_drivers_with_message(db_session, driver_data):
+    # Function to add drivers with a message
+    driver = Driver(**driver_data)
+    db_session.add(driver)
+    db_session.commit()
+    return {"message": "Driver added successfully", "driver": driver}
 
 
 
