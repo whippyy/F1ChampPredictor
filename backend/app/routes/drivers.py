@@ -1,16 +1,24 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app.schemas import ResponseMessage
+from fastapi import APIRouter
+from app.data_loader import get_data
+from pydantic import BaseModel
+
+# Define a response model to include a message and the data
+class DriverResponse(BaseModel):
+    message: str
+    data: list
 
 router = APIRouter()
 
-@router.get("/populate/drivers", tags=["Data Population"], response_model=ResponseMessage)
-def populate_drivers(db: Session = Depends(get_db)):
-    """Populate drivers from OpenF1 into the database."""
-    from app.crud import add_drivers_with_message  # Delayed import here
-    result = add_drivers_with_message(db)  # Get the result as a message
-    return result
+@router.get("/drivers", tags=["Data Fetching"], response_model=DriverResponse)
+async def get_drivers():
+    try:
+        drivers_data = get_data('drivers')
+        if drivers_data is not None:
+            return DriverResponse(message="Drivers data fetched successfully", data=drivers_data.to_dict(orient='records'))
+        return DriverResponse(message="No data found for drivers.", data=[])
+    except Exception as e:
+        return DriverResponse(message=f"Error fetching drivers data: {str(e)}", data=[])
+
 
 
 
