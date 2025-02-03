@@ -19,6 +19,36 @@ async def get_drivers():
     except Exception as e:
         return DriverResponse(message=f"Error fetching drivers data: {str(e)}", data=[])
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database import SessionLocal
+from app.models import Driver
+
+router = APIRouter()
+
+# Dependency to get a database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Fetch all drivers
+@router.get("/drivers")
+def get_all_drivers(db: Session = Depends(get_db)):
+    drivers = db.query(Driver).all()
+    return drivers
+
+# Fetch a specific driver by ID
+@router.get("/drivers/{driver_id}")
+def get_driver_by_id(driver_id: int, db: Session = Depends(get_db)):
+    driver = db.query(Driver).filter(Driver.driver_id == driver_id).first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    return driver
+
+
 
 
 
