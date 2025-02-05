@@ -2,19 +2,34 @@
 from sqlalchemy import Column, Integer, String, Date
 from app.database import Base  # Assuming you're using Base from your database setup
 
+from sqlalchemy import Column, Integer, String, Date
+from app.database import Base
+
 class Driver(Base):
     __tablename__ = "drivers"
-
-    id = Column(Integer, primary_key=True, index=True)
-    driver_id = Column(Integer, unique=True, index=True)
-    driver_ref = Column(String)
-    number = Column(Integer, nullable=True)  # Allow NULL if no number
-    code = Column(String, unique=True, index=True)
+    driver_id = Column(Integer, primary_key=True, index=True)
+    driver_ref = Column(String, index=True)
+    number = Column(String)
+    code = Column(String)
     forename = Column(String)
     surname = Column(String)
     dob = Column(Date)
     nationality = Column(String)
     url = Column(String)
+
+    def to_dict(self):
+        return {
+            "driverId": self.driver_id,
+            "driverRef": self.driver_ref,
+            "number": self.number,
+            "code": self.code,
+            "forename": self.forename,
+            "surname": self.surname,
+            "dob": str(self.dob),
+            "nationality": self.nationality,
+            "url": self.url,
+        }
+
 
 class Constructor(Base):
     __tablename__ = "constructors"
