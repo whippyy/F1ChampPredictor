@@ -5,13 +5,13 @@ class Driver(Base):
     __tablename__ = "drivers"
     driver_id = Column(Integer, primary_key=True, index=True)
     driver_ref = Column(String, index=True)
-    number = Column(String)
-    code = Column(String)
-    forename = Column(String)
-    surname = Column(String)
-    dob = Column(Date)
-    nationality = Column(String)
-    url = Column(String)
+    number = Column(String, nullable=True)
+    code = Column(String, nullable=True)
+    forename = Column(String, nullable=False)
+    surname = Column(String, nullable=False)
+    dob = Column(Date, nullable=False)
+    nationality = Column(String, nullable=False)
+    url = Column(String, nullable=False)
 
     def to_dict(self):
         return {
@@ -26,16 +26,13 @@ class Driver(Base):
             "url": self.url,
         }
 
-
 class Constructor(Base):
     __tablename__ = "constructors"
-
-    id = Column(Integer, primary_key=True, index=True)
-    constructor_id = Column(Integer, unique=True, index=True)
-    constructor_ref = Column(String)
-    name = Column(String)
-    nationality = Column(String)
-    url = Column(String)
+    constructor_id = Column(Integer, primary_key=True, index=True)
+    constructor_ref = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    nationality = Column(String, nullable=False)
+    url = Column(String, nullable=False)
 
 
 
