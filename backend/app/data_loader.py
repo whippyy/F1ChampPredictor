@@ -1,6 +1,6 @@
 import pandas as pd
 
-# Function to load CSV files
+# Load CSV files into a dictionary
 def load_csv_data():
     return {
         'circuits': pd.read_csv('app/data/circuits.csv'),
@@ -19,7 +19,6 @@ def load_csv_data():
         'status': pd.read_csv('app/data/status.csv')
     }
 
-# Function to get data from a specific file
 def get_data(file_name: str):
     data = load_csv_data()
     return data.get(file_name)

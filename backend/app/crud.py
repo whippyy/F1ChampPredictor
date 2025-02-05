@@ -1,17 +1,13 @@
-# app/crud.py
-from app.models import Driver, Constructor  # Make sure this import is correct
+from app.models import Driver, Constructor
 from sqlalchemy.orm import Session
 import csv
-
-# Define your add_drivers and add_constructors functions here
 
 def add_drivers(db: Session):
     with open('path_to_drivers.csv', newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            # Replace '\N' with None (for missing data)
             if row['number'] == '\\N':
-                row['number'] = None  # or row['number'] = np.nan for pandas if using it
+                row['number'] = None
             
             driver = Driver(
                 driver_id=row['driverId'],
@@ -27,7 +23,6 @@ def add_drivers(db: Session):
             db.add(driver)
         db.commit()
     return "Drivers added successfully"
-
 
 
 def add_constructors(db: Session):

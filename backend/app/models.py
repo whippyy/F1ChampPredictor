@@ -1,7 +1,3 @@
-# app/models.py
-from sqlalchemy import Column, Integer, String, Date
-from app.database import Base  # Assuming you're using Base from your database setup
-
 from sqlalchemy import Column, Integer, String, Date
 from app.database import Base
 
