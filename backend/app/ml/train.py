@@ -39,5 +39,5 @@ model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 model.fit(X_train, y_train, epochs=50, batch_size=8, validation_data=(X_test, y_test))
 
 # Save the model
-model.save("app/ml/f1_model.h5")
+model.save("app/ml/f1_model.keras")
 print("Model training complete and saved as f1_model.h5")
