@@ -21,8 +21,19 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, dob:
         raise ValueError("No trained model found! Please train the model first.")
 
     # Get driver & track name
-    driver_name = drivers_df.loc[drivers_df["driverId"] == driver_id, "forename"].values[0]
-    track_name = circuits_df.loc[circuits_df["circuitId"] == circuit_id, "name"].values[0]
+    driver_row = drivers_df[drivers_df["driverId"] == driver_id]
+    if not driver_row.empty:
+        driver_name = f"{driver_row['forename'].values[0]} {driver_row['surname'].values[0]}"
+    else:
+        driver_name = "Unknown Driver"
+
+    track_row = circuits_df[circuits_df["circuitId"] == circuit_id]
+
+    if not track_row.empty:
+        track_name = track_row["name"].values[0]
+    else:
+        track_name = "Unknown Track"
+
 
     # Prepare input
     input_data = scaler.transform([[grid, points, fastest_lap, dob]])
