@@ -3,10 +3,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from app.data_loader import load_csv_data
 import joblib
-from datetime import datetime
 
 # ✅ Load data
 data = load_csv_data()
@@ -17,10 +16,11 @@ circuits = data["circuits"]
 lap_times = data["lap_times"]
 qualifying = data["qualifying"]
 
-# ✅ Merge results with races to get `circuitId`
-df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left") \
+# ✅ Merge results with races to get `circuitId` and track names
+df = results.merge(races[["raceId", "circuitId", "name"]], on="raceId", how="left") \
             .merge(drivers, on="driverId", how="left") \
             .merge(circuits[["circuitId", "alt"]], on="circuitId", how="left")  # Track altitude
+
 
 # ✅ Convert qualifying lap times to milliseconds
 def time_to_milliseconds(time_str):
@@ -37,22 +37,22 @@ for col in ["q1", "q2", "q3"]:
 # ✅ Compute average qualifying time
 qualifying["avg_qualifying_time"] = qualifying[["q1", "q2", "q3"]].mean(axis=1)
 
-# ✅ Merge qualifying position & lap times into dataset
 df = df.merge(
     qualifying[["raceId", "driverId", "position", "avg_qualifying_time"]],
     on=["raceId", "driverId"], 
     how="left"
 )
-# Convert 'dob' to age
-current_year = datetime.now().year
-df["dob"] = pd.to_datetime(df["dob"], errors="coerce")
-df["age"] = current_year - df["dob"].dt.year  # Convert to age
-
-# Drop original 'dob' column
-df.drop(columns=["dob"], inplace=True)
 
 # ✅ Rename column for clarity
-df.rename(columns={"position_y": "qualifying_position"}, inplace=True)
+# ✅ Rename position column correctly
+if "position_y" in df.columns:
+    df.rename(columns={"position_y": "qualifying_position"}, inplace=True)
+elif "position" in df.columns:
+    df.rename(columns={"position": "qualifying_position"}, inplace=True)  # In case position_y does not exist
+
+# ✅ Print updated columns to confirm the rename
+print("Final Columns in df:", df.columns)
+
 
 # ✅ Compute average lap time per race
 avg_lap_time = lap_times.groupby(["raceId", "driverId"])["milliseconds"].mean().reset_index()
@@ -63,17 +63,19 @@ df = df.merge(avg_lap_time, on=["raceId", "driverId"], how="left")
 df.replace("\\N", np.nan, inplace=True)  # Convert '\N' to NaN
 df.dropna(inplace=True)  # Drop rows with missing values
 
-# ✅ Select relevant features
-features = df[["grid", "points", "age", "fastestLapSpeed", "qualifying_position", "avg_lap_time", "alt", "avg_qualifying_time"]].copy()
+# ✅ Convert 'fastestLapSpeed' to numeric
+df["fastestLapSpeed"] = pd.to_numeric(df["fastestLapSpeed"], errors="coerce")
+
+# ✅ Fill missing values with column mean
+df["fastestLapSpeed"].fillna(df["fastestLapSpeed"].mean(), inplace=True)
+
+# ✅ Select relevant features (Removed 'dob' completely)
+features = df[["grid", "points", "fastestLapSpeed", "qualifying_position", "avg_lap_time", "alt", "avg_qualifying_time"]].copy()
 
 # ✅ Convert to numeric & handle missing values
 features["qualifying_position"] = pd.to_numeric(features["qualifying_position"], errors="coerce")
 features["avg_qualifying_time"] = pd.to_numeric(features["avg_qualifying_time"], errors="coerce")
 features.fillna(features.mean(), inplace=True)
-
-# ✅ Encode categorical data (Convert `dob` to numerical values)
-encoder = LabelEncoder()
-features["dob"] = encoder.fit_transform(features["dob"])
 
 # ✅ Normalize features
 scaler = StandardScaler()
@@ -105,4 +107,5 @@ model.fit(X_train, y_train / 20.0, epochs=150, batch_size=32, validation_data=(X
 # ✅ Save the trained model
 model.save("app/ml/f1_model.keras")
 print("✅ Model training complete!")
+
 
