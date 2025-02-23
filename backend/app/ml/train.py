@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
 from app.data_loader import load_csv_data
 
 # Load data
@@ -15,7 +15,7 @@ features = df[["grid", "points", "dob"]]
 target = df["positionOrder"]
 
 # Encode categorical data
-encoder = LabelEncoder()
+encoder = MinMaxScaler()
 features["dob"] = encoder.fit_transform(features["dob"])
 
 # Normalize features

@@ -1,8 +1,11 @@
 from pydantic import BaseModel
 
-class ResponseMessage(BaseModel):
-    message: str
-
+class PredictionInput(BaseModel):
+    driver_id: int
+    track_id: int
+    grid: int
+    points: float
+    dob: int
 
 
 
