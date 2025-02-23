@@ -10,21 +10,26 @@ from app.data_loader import load_csv_data
 data = load_csv_data()
 drivers = data["drivers"]
 results = data["results"]
+races = data["races"]  # ✅ Load races to get `circuitId`
 circuits = data["circuits"]
 lap_times = data["lap_times"]
 
-# Merge results with drivers & circuits
-df = results.merge(drivers, on="driverId").merge(circuits, on="circuitId", how="left")
+# Merge results with races to get `circuitId`
+df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left") \
+            .merge(drivers, on="driverId", how="left") \
+            .merge(circuits, on="circuitId", how="left")
 
-# Get fastest lap per race
-fastest_laps = lap_times.groupby(["raceId", "driverId"])["milliseconds"].min().reset_index()
-df = df.merge(fastest_laps, on=["raceId", "driverId"], how="left")
+# Check if merge was successful
+print("Merged DataFrame Columns:", df.columns)
+df.replace("\\N", np.nan, inplace=True)  # ✅ Convert '\N' to NaN
+df.dropna(inplace=True)  # ✅ Drop rows with missing values
+
 
 # Select relevant features
-features = df[["grid", "points", "milliseconds", "dob", "fastestLapSpeed"]]
+features = df[["grid", "points", "dob", "fastestLapSpeed"]]
 target = df["positionOrder"]
 
-# Encode categorical data (e.g., dob)
+# Encode categorical data
 encoder = LabelEncoder()
 features["dob"] = encoder.fit_transform(features["dob"])
 
@@ -32,12 +37,13 @@ features["dob"] = encoder.fit_transform(features["dob"])
 scaler = StandardScaler()
 features_scaled = scaler.fit_transform(features)
 
-# Split into training & test sets
+# Split into train & test sets
 X_train, X_test, y_train, y_test = train_test_split(features_scaled, target, test_size=0.2, random_state=42)
 
 # Save the scaler for predictions
 import joblib
 joblib.dump(scaler, "app/ml/scaler.pkl")
+
 
 # Define a better model
 model = keras.Sequential([
