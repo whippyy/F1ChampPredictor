@@ -8,10 +8,11 @@ router = APIRouter()
 def predict_race_api(data: PredictionInput):
     prediction_result = predict_race(
         driver_id=data.driver_id,
-        track_id=data.track_id,
+        circuit_id=data.circuit_id,
         grid=data.grid,
         points=data.points,
-        dob=data.dob
+        dob=data.dob,
+        fastest_lap=data.fastest_lap
     )
     return prediction_result
 
