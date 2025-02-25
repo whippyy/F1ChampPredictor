@@ -1,0 +1,22 @@
+Predict Qualifying Position
+
+    Train a separate model for qualifying position using relevant features like q1, q2, q3 lap times, grid position, and track characteristics.
+    Use this prediction as input for the race prediction model.
+
+Carry Over Points for Championship Standings
+
+    Maintain a cumulative points table that updates after each predicted race.
+    Fetch previous race results of each driver and sum up their points before making a prediction.
+
+Filter Teams for a Specific Season
+
+    Create an endpoint to fetch constructors (teams) that participated in the current season.
+    Ensure predictions consider only drivers from the filtered teams.
+
+
+
+
+
+
+
+
