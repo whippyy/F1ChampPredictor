@@ -17,7 +17,6 @@ drivers_df = data["drivers"]
 circuits_df = data["circuits"]
 races_df = data["races"]
 results_df = data["results"]
-lap_times_df = data["lap_times"]
 
 # ✅ Get current season (2024)
 current_season = 2024
@@ -27,17 +26,58 @@ current_season_race_ids = races_df[races_df["year"] == current_season]["raceId"]
 valid_drivers = results_df[results_df["raceId"].isin(current_season_race_ids)]["driverId"].unique()
 valid_circuits = races_df[races_df["raceId"].isin(current_season_race_ids)]["circuitId"].unique()
 
-def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float, qualifying_position: int, avg_qualifying_time: float):
+def predict_qualifying_position(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float, avg_qualifying_time: float):
+    """
+    Predicts the qualifying position for a driver on a given track.
+    Ensures input data is valid and prevents NaN errors.
+    """
     if model is None or scaler is None:
         raise ValueError("No trained model found! Please train the model first.")
 
-    # ✅ Check if driver is valid for 2024
-    if driver_id not in valid_drivers:
-        return {"error": "Invalid driver for current season"}
+    # ✅ Ensure 7 features are passed into the model
+    input_data = scaler.transform([[grid, points, fastest_lap, avg_qualifying_time, circuit_id, driver_id, 0]])
 
-    # ✅ Check if circuit is valid for 2024
-    if circuit_id not in valid_circuits:
-        return {"error": "Invalid circuit for current season"}
+    # 🚨 Debugging: Check for NaN values after scaling
+    if np.isnan(input_data).any():
+        print(f"❌ NaN detected in input data: {input_data}")
+        return 10  # Default to mid-grid position if NaN
+
+    # ✅ Predict position
+    predicted_position = model.predict(input_data)[0][0] * 20
+
+    # 🚨 Handle NaN results
+    if np.isnan(predicted_position):
+        print("❌ NaN detected in model output. Defaulting to position 10.")
+        return 10  # Default to mid-grid if NaN
+
+    return max(1, min(round(predicted_position), 20))  # Ensure 1-20 range
+
+
+
+def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float, qualifying_position: int, avg_qualifying_time: float):
+    """
+    Predicts the final race result after determining the qualifying position.
+    Returns a dictionary with driver details.
+    """
+    if model is None or scaler is None:
+        raise ValueError("No trained model found! Please train the model first.")
+
+    # ✅ Ensure 7 features are passed to match the trained model
+    input_data = scaler.transform([[grid, points, fastest_lap, qualifying_position, avg_qualifying_time, circuit_id, driver_id]])
+
+    # 🚨 Debugging: Check for NaN values after scaling
+    if np.isnan(input_data).any():
+        print(f"❌ NaN detected in input data: {input_data}")
+        predicted_position = 10  # Default to mid-grid position if NaN
+    else:
+        predicted_position = model.predict(input_data)[0][0] * 20
+
+        # 🚨 Handle NaN results
+        if np.isnan(predicted_position):
+            print("❌ NaN detected in model output. Defaulting to position 10.")
+            predicted_position = 10  # Default to mid-grid if NaN
+
+    predicted_position = max(1, min(round(predicted_position), 20))  # Ensure between 1-20
 
     # ✅ Get driver & track name
     driver_row = drivers_df[drivers_df["driverId"] == driver_id]
@@ -46,24 +86,11 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
     track_row = circuits_df[circuits_df["circuitId"] == circuit_id]
     track_name = track_row["name"].values[0] if not track_row.empty else "Unknown Track"
 
-    # ✅ Fetch track altitude
-    alt = track_row["alt"].values[0] if not track_row.empty else 0  # Default to 0 if missing
-
-    # ✅ Fetch driver's average lap time
-    avg_lap_time_row = lap_times_df[(lap_times_df["driverId"] == driver_id) & (lap_times_df["raceId"].isin(current_season_race_ids))]
-    avg_lap_time = avg_lap_time_row["milliseconds"].mean() if not avg_lap_time_row.empty else 0  # Default to 0 if missing
-
-    print(f"🔍 avg_lap_time: {avg_lap_time}, alt: {alt}")
-
-    # ✅ Ensure input has 7 features
-    input_data = scaler.transform([[grid, points, fastest_lap, qualifying_position, avg_lap_time, alt, avg_qualifying_time]])
-
-    # ✅ Predict position (convert back to 1-20 scale)
-    predicted_position = int(model.predict(input_data)[0][0] * 20)
-    predicted_position = max(1, min(predicted_position, 20))
-
+    # ✅ Always return a dictionary
     return {
         "driver": driver_name,
         "track": track_name,
-        "predicted_position": predicted_position
+        "predicted_qualifying_position": qualifying_position,
+        "predicted_race_position": predicted_position
     }
+

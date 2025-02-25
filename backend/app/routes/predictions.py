@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.ml.predict import predict_race
+from app.ml.predict import predict_qualifying_position, predict_race
 from app.schemas import TrackPredictionRequest
 from app.data_loader import load_csv_data
 from datetime import datetime
@@ -53,36 +53,40 @@ def predict_entire_race(data: TrackPredictionRequest):
     drivers_in_season = list(valid_drivers)
     raw_predictions = []
 
-    # ✅ Loop through all drivers and predict race outcome
+    # ✅ Loop through all drivers and predict qualifying position first
     for driver_id in drivers_in_season:
-        grid_position = np.random.randint(1, 21)  # Random grid position
-        fastest_lap_time = np.random.uniform(85.0, 100.0)  # Random lap time
-        avg_qualifying_time = fastest_lap_time * 1000  # Convert to ms
-        points = np.random.uniform(0, 25)  # Random points between 0-25
+        # Fetch past grid position, points, and qualifying times
+        grid_position, previous_points, avg_qualifying_time = get_driver_stats(driver_id, circuit_id)
 
+        # ✅ Predict qualifying position
+        qualifying_position = predict_qualifying_position(
+            driver_id, circuit_id, grid_position, previous_points, 90.0, avg_qualifying_time
+        )
+
+        # ✅ Predict race position using the qualifying position
         prediction = predict_race(
             driver_id=driver_id,
             circuit_id=circuit_id,
             grid=grid_position,
-            points=points,
-            fastest_lap=fastest_lap_time,
-            qualifying_position=grid_position,
+            points=previous_points,
+            fastest_lap=90.0,
+            qualifying_position=qualifying_position,  # ✅ Now we pass this value
             avg_qualifying_time=avg_qualifying_time
         )
-        
-        raw_predictions.append((driver_id, prediction["predicted_position"], prediction))
 
-    # ✅ Sort by exact model output (before rounding)
-    raw_predictions.sort(key=lambda x: x[1])  # Sort by predicted position
+        raw_predictions.append((driver_id, prediction["predicted_race_position"], prediction))
 
-    # ✅ Assign unique positions from 1 to 20
+    # ✅ Sort by race position
+    raw_predictions.sort(key=lambda x: x[1])
+
+    # ✅ Assign unique positions
     for i, (_, _, prediction) in enumerate(raw_predictions):
-        prediction["predicted_position"] = i + 1
+        prediction["predicted_race_position"] = i + 1
 
-    # ✅ Final sorted predictions
+    # ✅ Return results
     predictions = [prediction for _, _, prediction in raw_predictions]
 
     return {
-        "track": predictions[0]["track"],  # Use track name from first prediction
+        "track": predictions[0]["track"],
         "predictions": predictions
     }
