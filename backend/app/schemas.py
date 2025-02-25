@@ -10,6 +10,10 @@ class PredictionRequest(BaseModel):
     avg_qualifying_time: float
 
 
+class TrackPredictionRequest(BaseModel):
+    circuit_id: int
+
+
 
 
 
