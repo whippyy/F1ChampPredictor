@@ -17,6 +17,7 @@ drivers_df = data["drivers"]
 circuits_df = data["circuits"]
 races_df = data["races"]
 results_df = data["results"]
+lap_times_df = data["lap_times"]
 
 # ✅ Get current season (2024)
 current_season = 2024
@@ -26,37 +27,17 @@ current_season_race_ids = races_df[races_df["year"] == current_season]["raceId"]
 valid_drivers = results_df[results_df["raceId"].isin(current_season_race_ids)]["driverId"].unique()
 valid_circuits = races_df[races_df["raceId"].isin(current_season_race_ids)]["circuitId"].unique()
 
-# Debugging output to check valid circuits
-print("🟢 Valid circuits for 2024:", valid_circuits)
-
 def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float, qualifying_position: int, avg_qualifying_time: float):
     if model is None or scaler is None:
         raise ValueError("No trained model found! Please train the model first.")
 
     # ✅ Check if driver is valid for 2024
     if driver_id not in valid_drivers:
-        print(f"❌ Driver {driver_id} is not in valid drivers for 2024: {valid_drivers}")
         return {"error": "Invalid driver for current season"}
 
-    print(f"🔍 Received circuit_id: {circuit_id} (type: {type(circuit_id)})")
-    print(f"🔍 Valid circuits for {current_season}: {valid_circuits}")
-
-    # Ensure circuit_id is converted to int
-    circuit_id = int(circuit_id)
-
-    # Convert valid circuits to a set of integers
-    valid_circuit_set = set(map(int, valid_circuits))
-
-    print(f"🔍 Converted circuit_id: {circuit_id} (type: {type(circuit_id)})")
-    print(f"🔍 Valid circuit set: {valid_circuit_set}")
-
-    if circuit_id not in valid_circuit_set:
-        print(f"❌ Circuit {circuit_id} is NOT in valid circuits!")
+    # ✅ Check if circuit is valid for 2024
+    if circuit_id not in valid_circuits:
         return {"error": "Invalid circuit for current season"}
-    else:
-        print(f"✅ Circuit {circuit_id} is valid!")
-
-
 
     # ✅ Get driver & track name
     driver_row = drivers_df[drivers_df["driverId"] == driver_id]
@@ -65,8 +46,17 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
     track_row = circuits_df[circuits_df["circuitId"] == circuit_id]
     track_name = track_row["name"].values[0] if not track_row.empty else "Unknown Track"
 
-    # ✅ Prepare input
-    input_data = scaler.transform([[grid, points, fastest_lap, qualifying_position, avg_qualifying_time]])
+    # ✅ Fetch track altitude
+    alt = track_row["alt"].values[0] if not track_row.empty else 0  # Default to 0 if missing
+
+    # ✅ Fetch driver's average lap time
+    avg_lap_time_row = lap_times_df[(lap_times_df["driverId"] == driver_id) & (lap_times_df["raceId"].isin(current_season_race_ids))]
+    avg_lap_time = avg_lap_time_row["milliseconds"].mean() if not avg_lap_time_row.empty else 0  # Default to 0 if missing
+
+    print(f"🔍 avg_lap_time: {avg_lap_time}, alt: {alt}")
+
+    # ✅ Ensure input has 7 features
+    input_data = scaler.transform([[grid, points, fastest_lap, qualifying_position, avg_lap_time, alt, avg_qualifying_time]])
 
     # ✅ Predict position (convert back to 1-20 scale)
     predicted_position = int(model.predict(input_data)[0][0] * 20)
