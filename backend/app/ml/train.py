@@ -44,15 +44,10 @@ df = df.merge(
 )
 
 # ✅ Rename column for clarity
-# ✅ Rename position column correctly
 if "position_y" in df.columns:
     df.rename(columns={"position_y": "qualifying_position"}, inplace=True)
 elif "position" in df.columns:
-    df.rename(columns={"position": "qualifying_position"}, inplace=True)  # In case position_y does not exist
-
-# ✅ Print updated columns to confirm the rename
-print("Final Columns in df:", df.columns)
-
+    df.rename(columns={"position": "qualifying_position"}, inplace=True)
 
 # ✅ Compute average lap time per race
 avg_lap_time = lap_times.groupby(["raceId", "driverId"])["milliseconds"].mean().reset_index()
@@ -60,13 +55,12 @@ avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
 df = df.merge(avg_lap_time, on=["raceId", "driverId"], how="left")
 
 # ✅ Handle missing values
-df.replace("\\N", np.nan, inplace=True)  # Convert '\N' to NaN
-df.dropna(inplace=True)  # Drop rows with missing values
+df.replace("\\N", np.nan, inplace=True)
+df.dropna(inplace=True)
 
 # ✅ Convert 'fastestLapSpeed' to numeric
 df["fastestLapSpeed"] = pd.to_numeric(df["fastestLapSpeed"], errors="coerce")
 
-# ✅ Fill missing values with column mean
 df["fastestLapSpeed"].fillna(df["fastestLapSpeed"].mean(), inplace=True)
 
 # ✅ Select relevant features (Removed 'dob' completely)
@@ -85,7 +79,7 @@ features_scaled = scaler.fit_transform(features)
 joblib.dump(scaler, "app/ml/scaler.pkl")
 
 # ✅ Prepare target variable (final race position)
-target = df["positionOrder"]
+target = df["positionOrder"] / 20.0  # Normalize target for training
 
 # ✅ Split into train & test sets
 X_train, X_test, y_train, y_test = train_test_split(features_scaled, target, test_size=0.2, random_state=42)
@@ -102,10 +96,9 @@ model = keras.Sequential([
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 
 # ✅ Train model with more epochs
-model.fit(X_train, y_train / 20.0, epochs=150, batch_size=32, validation_data=(X_test, y_test / 20.0))
+model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test))
 
 # ✅ Save the trained model
 model.save("app/ml/f1_model.keras")
 print("✅ Model training complete!")
-
 

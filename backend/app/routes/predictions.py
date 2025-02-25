@@ -33,6 +33,8 @@ def get_driver_stats(driver_id, circuit_id):
     
     qualifying_result = qualifying_df[(qualifying_df["driverId"] == driver_id) & (qualifying_df["raceId"].isin(current_races["raceId"]))]
     avg_qualifying_time = qualifying_result[["q1", "q2", "q3"]].apply(pd.to_numeric, errors='coerce').mean().mean()
+    if np.isnan(avg_qualifying_time):
+        avg_qualifying_time = 90000
     
     last_race_grid_position = driver_results.sort_values(by="raceId", ascending=False)["grid"].values[0] if not driver_results.empty else 10
     
@@ -60,7 +62,7 @@ def predict_entire_race(data: TrackPredictionRequest):
 
         # ✅ Predict qualifying position
         qualifying_position = predict_qualifying_position(
-            driver_id, circuit_id, grid_position, previous_points, 90.0, avg_qualifying_time
+            driver_id, circuit_id, grid_position, previous_points, 90.0
         )
 
         # ✅ Predict race position using the qualifying position
@@ -70,9 +72,10 @@ def predict_entire_race(data: TrackPredictionRequest):
             grid=grid_position,
             points=previous_points,
             fastest_lap=90.0,
-            qualifying_position=qualifying_position,  # ✅ Now we pass this value
-            avg_qualifying_time=avg_qualifying_time
+            qualifying_position=qualifying_position,
+            avg_qualifying_time=avg_qualifying_time  # ✅ Add this missing argument
         )
+
 
         raw_predictions.append((driver_id, prediction["predicted_race_position"], prediction))
 

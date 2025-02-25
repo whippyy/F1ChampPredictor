@@ -1,3 +1,4 @@
+import pandas as pd
 import tensorflow as tf
 import numpy as np
 import os
@@ -17,40 +18,59 @@ drivers_df = data["drivers"]
 circuits_df = data["circuits"]
 races_df = data["races"]
 results_df = data["results"]
+qualifying_df = data["qualifying"]
 
 # ✅ Get current season (2024)
 current_season = 2024
 current_season_race_ids = races_df[races_df["year"] == current_season]["raceId"]
+current_races = races_df[races_df["year"] == current_season]
 
 # ✅ Get valid drivers & circuits for 2024
 valid_drivers = results_df[results_df["raceId"].isin(current_season_race_ids)]["driverId"].unique()
 valid_circuits = races_df[races_df["raceId"].isin(current_season_race_ids)]["circuitId"].unique()
-
-def predict_qualifying_position(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float, avg_qualifying_time: float):
+def predict_qualifying_position(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float):
     """
-    Predicts the qualifying position for a driver on a given track.
-    Ensures input data is valid and prevents NaN errors.
+    Predicts the qualifying position for a driver on a given track using real past data.
     """
     if model is None or scaler is None:
         raise ValueError("No trained model found! Please train the model first.")
 
-    # ✅ Ensure 7 features are passed into the model
-    input_data = scaler.transform([[grid, points, fastest_lap, avg_qualifying_time, circuit_id, driver_id, 0]])
+    # 🔍 Get past qualifying times for this driver on this circuit
+    qualifying_times = qualifying_df[
+        (qualifying_df["driverId"] == driver_id) & 
+        (qualifying_df["raceId"].isin(current_races["raceId"]))
+    ][["q1", "q2", "q3"]].apply(pd.to_numeric, errors='coerce')
+
+    # ✅ Compute average qualifying time (ignoring NaNs)
+    avg_qualifying_time = qualifying_times.mean().mean()
+
+    # 🚨 If no valid past data, set a default
+    if np.isnan(avg_qualifying_time):
+        avg_qualifying_time = 90000  # Default: 90 seconds in milliseconds
+
+    # 🚀 Debugging: Print input data BEFORE scaling
+    input_data = np.array([[grid, points, fastest_lap, avg_qualifying_time, circuit_id, driver_id, 0]])
+    print(f"🔍 Raw Qualifying Input for Driver {driver_id}: {input_data}")
+
+    # ✅ Scale input
+    input_data = scaler.transform(input_data)
 
     # 🚨 Debugging: Check for NaN values after scaling
     if np.isnan(input_data).any():
-        print(f"❌ NaN detected in input data: {input_data}")
-        return 10  # Default to mid-grid position if NaN
+        print(f"❌ NaN detected in scaled input for Driver {driver_id}: {input_data}, defaulting to 10th place")
+        return 10
 
-    # ✅ Predict position
+    # ✅ Predict qualifying position
     predicted_position = model.predict(input_data)[0][0] * 20
 
-    # 🚨 Handle NaN results
-    if np.isnan(predicted_position):
-        print("❌ NaN detected in model output. Defaulting to position 10.")
-        return 10  # Default to mid-grid if NaN
+    # 🚀 Debugging: Print prediction output
+    print(f"🔍 Predicted Qualifying Position for Driver {driver_id}: {predicted_position}")
 
-    return max(1, min(round(predicted_position), 20))  # Ensure 1-20 range
+    # 🚨 Handle NaN predictions
+    if np.isnan(predicted_position):
+        predicted_position = 10  # Default to mid-grid
+
+    return max(1, min(round(predicted_position), 20))  # Ensure within 1-20 range
 
 
 
