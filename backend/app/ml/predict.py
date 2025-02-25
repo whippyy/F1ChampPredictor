@@ -38,13 +38,23 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
         print(f"❌ Driver {driver_id} is not in valid drivers for 2024: {valid_drivers}")
         return {"error": "Invalid driver for current season"}
 
-    # ✅ Check if circuit is valid for 2024
-    print(f"🔍 Checking circuit_id={circuit_id} (type: {type(circuit_id)}) against valid circuits...")
+    print(f"🔍 Received circuit_id: {circuit_id} (type: {type(circuit_id)})")
+    print(f"🔍 Valid circuits for {current_season}: {valid_circuits}")
 
-    # Convert circuit_id to int before checking
-    if int(circuit_id) not in set(map(int, valid_circuits)):
-        print(f"❌ Circuit {circuit_id} is NOT in valid circuits: {valid_circuits}")
+    # Ensure circuit_id is converted to int
+    circuit_id = int(circuit_id)
+
+    # Convert valid circuits to a set of integers
+    valid_circuit_set = set(map(int, valid_circuits))
+
+    print(f"🔍 Converted circuit_id: {circuit_id} (type: {type(circuit_id)})")
+    print(f"🔍 Valid circuit set: {valid_circuit_set}")
+
+    if circuit_id not in valid_circuit_set:
+        print(f"❌ Circuit {circuit_id} is NOT in valid circuits!")
         return {"error": "Invalid circuit for current season"}
+    else:
+        print(f"✅ Circuit {circuit_id} is valid!")
 
 
 
