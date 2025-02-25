@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import data, drivers, predictions, teams, current_circuits, current_drivers
+from app.routes import data, drivers, predictions, teams
 
 app = FastAPI()
 
@@ -13,8 +13,6 @@ app.include_router(data.router)
 app.include_router(drivers.router)
 app.include_router(predictions.router)
 app.include_router(teams.router)
-app.include_router(current_circuits.router)
-app.include_router(current_drivers.router)
 
 
 
