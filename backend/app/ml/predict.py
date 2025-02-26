@@ -19,6 +19,10 @@ circuits_df = data["circuits"]
 races_df = data["races"]
 results_df = data["results"]
 lap_times_df = data["lap_times"]
+pit_stops_df = data["pit_stops"]
+qualifying_df = data["qualifying"]
+
+
 
 # ✅ Compute average lap time per driver per race
 avg_lap_time = lap_times_df.groupby(["raceId", "driverId"])["milliseconds"].mean().reset_index()
@@ -54,7 +58,7 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
         raise ValueError("No trained model found! Please train the model first.")
 
     # ✅ Ensure input features match the trained model
-    feature_names = ["grid", "points", "fastestLapSpeed", "avg_lap_time"]
+    feature_names = ["grid", "race_points", "season_points", "fastestLapSpeed", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"]
 
 
     lap_times_df["milliseconds"] = pd.to_numeric(lap_times_df["milliseconds"], errors="coerce")
@@ -82,8 +86,44 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
 
     print(f"📊 Avg Lap Time for Driver {driver_id} on Track {circuit_id}: {avg_lap_time}")
 
+    # Ensure correct feature names
+    results_df.rename(columns={"points": "race_points"}, inplace=True)
+
+    # Fetch race points
+    race_points = results_df[results_df["driverId"] == driver_id]["race_points"].max()
+    race_points = race_points if not np.isnan(race_points) else 0  # Default to 0 if missing
+
+    # Ensure standings data is loaded
+    standings_df = data["driver_standings"]
+
+    # Fetch the latest season points for the driver
+    season_points = standings_df[(standings_df["driverId"] == driver_id) & 
+                                (standings_df["raceId"].isin(current_races["raceId"]))]["points"].max()
+    season_points = season_points if not np.isnan(season_points) else 0  # Default to 0 if missing
+
+    # Fetch average pit stop time for the driver
+    # Compute average pit stop time for the driver
+    avg_pit_time = pit_stops_df[pit_stops_df["driverId"] == driver_id]["milliseconds"].mean()
+    avg_pit_time = avg_pit_time if not np.isnan(avg_pit_time) else pit_stops_df["milliseconds"].median()  # Default to median if missing
+    avg_pit_time = avg_pit_time if not np.isnan(avg_pit_time) else results_df["avg_pit_time"].median()  # Default to median
+
+    # Convert qualifying times to numeric values (handling missing values)
+    for col in ["q1", "q2", "q3"]:
+        qualifying_df[col] = pd.to_numeric(qualifying_df[col], errors="coerce")
+
+    # Compute average qualifying time for the driver
+    qualifying_df["avg_qualifying_time"] = qualifying_df[["q1", "q2", "q3"]].mean(axis=1)
+
+    # Fetch the driver's average qualifying time
+    avg_qualifying_time = qualifying_df[qualifying_df["driverId"] == driver_id]["avg_qualifying_time"].mean()
+    avg_qualifying_time = avg_qualifying_time if not np.isnan(avg_qualifying_time) else qualifying_df["avg_qualifying_time"].median()  # Default to median if missing
+
+
     # ✅ Create input array
-    input_data = pd.DataFrame([[grid, points, fastest_lap, avg_lap_time]], columns=feature_names)
+    input_data = pd.DataFrame([[grid, race_points, season_points, fastest_lap, avg_lap_time, avg_pit_time, avg_qualifying_time]],
+                            columns=feature_names)
+
+
 
     # ✅ Transform input data
     input_data_scaled = scaler.transform(input_data)
