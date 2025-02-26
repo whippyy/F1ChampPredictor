@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.ml.predict import predict_qualifying_position, predict_race
+from app.ml.predict import predict_race
 from app.schemas import TrackPredictionRequest
 from app.data_loader import load_csv_data
 import numpy as np
@@ -12,13 +12,12 @@ data = load_csv_data()
 current_year = 2024
 races_df = data["races"]
 results_df = data["results"]
-qualifying_df = data["qualifying"]
 drivers_df = data["drivers"]
 
 # ✅ Filter current season races
 current_races = races_df[races_df["year"] == current_year]
 valid_tracks = set(current_races["circuitId"])
-valid_drivers = set(results_df[results_df["raceId"].isin(current_races["raceId"])]["driverId"])
+valid_drivers = set(results_df[results_df["raceId"].isin(current_races["raceId"])] ["driverId"])
 
 print(f"🟢 Current Season: {current_year}")
 print(f"🟢 Valid Circuits for {current_year}: {valid_tracks}")
@@ -26,7 +25,7 @@ print(f"🟢 Valid Drivers for {current_year}: {valid_drivers}")
 
 def get_driver_stats(driver_id, circuit_id):
     """
-    Fetches past grid position, previous points, and qualifying time for a driver.
+    Fetches past grid position and previous points for a driver.
     """
     # ✅ Get previous points
     driver_results = results_df[
@@ -34,29 +33,12 @@ def get_driver_stats(driver_id, circuit_id):
     ]
     previous_points = driver_results["points"].sum()
 
-    # ✅ Extract valid qualifying times for this driver
-    qualifying_times = qualifying_df[
-        (qualifying_df["driverId"] == driver_id) & (qualifying_df["raceId"].isin(current_races["raceId"]))
-    ][["q1", "q2", "q3"]].apply(pd.to_numeric, errors="coerce")
-
-    # ✅ Compute average qualifying time (remove NaNs before mean)
-    if not qualifying_times.empty:
-        avg_qualifying_time = qualifying_times.stack().mean()
-    else:
-        avg_qualifying_time = qualifying_df[["q1", "q2", "q3"]].apply(pd.to_numeric, errors="coerce").stack().mean()
-        avg_qualifying_time = avg_qualifying_time if not np.isnan(avg_qualifying_time) else 90000  # Fallback
-
-    print(f"📊 Final Avg Qualifying Time for Driver {driver_id}: {avg_qualifying_time}")  
-
     # ✅ Get last race grid position
     last_race_grid_position = (
         driver_results.sort_values(by="raceId", ascending=False)["grid"].values[0] if not driver_results.empty else 10
     )
 
-    return last_race_grid_position, previous_points, avg_qualifying_time
-
-
-
+    return last_race_grid_position, previous_points
 
 @router.post("/predict-race")
 def predict_entire_race(data: TrackPredictionRequest):
@@ -73,25 +55,18 @@ def predict_entire_race(data: TrackPredictionRequest):
     drivers_in_season = list(valid_drivers)
     raw_predictions = []
 
-    # ✅ Loop through all drivers and predict qualifying position first
+    # ✅ Loop through all drivers and predict race position
     for driver_id in drivers_in_season:
-        # ✅ Fetch past grid position, points, and qualifying times
-        grid_position, previous_points, avg_qualifying_time = get_driver_stats(driver_id, circuit_id)
+        # ✅ Fetch past grid position and points
+        grid_position, previous_points = get_driver_stats(driver_id, circuit_id)
 
-        # ✅ Predict qualifying position
-        qualifying_position = predict_qualifying_position(
-            driver_id, circuit_id, grid_position, previous_points, 90.0
-        )
-
-        # ✅ Predict race position using the qualifying position
+        # ✅ Predict race position
         prediction = predict_race(
             driver_id=driver_id,
             circuit_id=circuit_id,
             grid=grid_position,
             points=previous_points,
-            fastest_lap=90.0,
-            qualifying_position=qualifying_position,
-            avg_qualifying_time=avg_qualifying_time  # ✅ Add missing argument
+            fastest_lap=90.0  # Placeholder value
         )
 
         raw_predictions.append((driver_id, prediction["predicted_race_position"], prediction))
@@ -110,3 +85,4 @@ def predict_entire_race(data: TrackPredictionRequest):
         "track": predictions[0]["track"],
         "predictions": predictions
     }
+
