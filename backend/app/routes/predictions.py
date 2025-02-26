@@ -22,6 +22,7 @@ valid_drivers = set(results_df[results_df["raceId"].isin(current_races["raceId"]
 
 print(f"🟢 Current Season: {current_year}")
 print(f"🟢 Valid Circuits for {current_year}: {valid_tracks}")
+print(f"🟢 Valid Drivers for {current_year}: {valid_drivers}")
 
 def get_driver_stats(driver_id, circuit_id):
     """
@@ -53,6 +54,9 @@ def get_driver_stats(driver_id, circuit_id):
     )
 
     return last_race_grid_position, previous_points, avg_qualifying_time
+
+
+
 
 @router.post("/predict-race")
 def predict_entire_race(data: TrackPredictionRequest):
