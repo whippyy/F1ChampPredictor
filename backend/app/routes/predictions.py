@@ -25,20 +25,29 @@ print(f"🟢 Valid Drivers for {current_year}: {valid_drivers}")
 
 def get_driver_stats(driver_id, circuit_id):
     """
-    Fetches past grid position and previous points for a driver.
+    Fetch past grid position, previous points, and average lap time for a driver.
     """
-    # ✅ Get previous points
     driver_results = results_df[
         (results_df["driverId"] == driver_id) & (results_df["raceId"].isin(current_races["raceId"]))
     ]
+    
+    # ✅ Get previous points
     previous_points = driver_results["points"].sum()
 
     # ✅ Get last race grid position
     last_race_grid_position = (
-        driver_results.sort_values(by="raceId", ascending=False)["grid"].values[0] if not driver_results.empty else 10
+        driver_results.sort_values(by="raceId", ascending=False)["grid"].values[0] 
+        if not driver_results.empty else 10  # Default to mid-grid
     )
 
-    return last_race_grid_position, previous_points
+    # ✅ Compute average lap time (use median if no valid data)
+    avg_lap_time = driver_results["milliseconds"].mean()
+    avg_lap_time = avg_lap_time if not np.isnan(avg_lap_time) else results_df["milliseconds"].median()
+
+    print(f"📊 Driver {driver_id}: Grid={last_race_grid_position}, Points={previous_points}, Avg Lap={avg_lap_time}")
+
+    return last_race_grid_position, previous_points, avg_lap_time
+
 
 @router.post("/predict-race")
 def predict_entire_race(data: TrackPredictionRequest):
@@ -51,14 +60,16 @@ def predict_entire_race(data: TrackPredictionRequest):
     if circuit_id not in valid_tracks:
         raise HTTPException(status_code=400, detail="Invalid circuit for current season")
 
+    print(f"🚦 Predicting race for track {circuit_id}...")
+
     # ✅ Fetch valid drivers for the season
     drivers_in_season = list(valid_drivers)
     raw_predictions = []
 
     # ✅ Loop through all drivers and predict race position
     for driver_id in drivers_in_season:
-        # ✅ Fetch past grid position and points
-        grid_position, previous_points = get_driver_stats(driver_id, circuit_id)
+        # ✅ Fetch past grid position & points
+        grid_position, previous_points, avg_lap_time = get_driver_stats(driver_id, circuit_id)
 
         # ✅ Predict race position
         prediction = predict_race(
@@ -66,7 +77,7 @@ def predict_entire_race(data: TrackPredictionRequest):
             circuit_id=circuit_id,
             grid=grid_position,
             points=previous_points,
-            fastest_lap=90.0  # Placeholder value
+            fastest_lap=90.0
         )
 
         raw_predictions.append((driver_id, prediction["predicted_race_position"], prediction))
@@ -85,4 +96,3 @@ def predict_entire_race(data: TrackPredictionRequest):
         "track": predictions[0]["track"],
         "predictions": predictions
     }
-

@@ -18,6 +18,24 @@ drivers_df = data["drivers"]
 circuits_df = data["circuits"]
 races_df = data["races"]
 results_df = data["results"]
+lap_times_df = data["lap_times"]
+
+# ✅ Compute average lap time per driver per race
+avg_lap_time = lap_times_df.groupby(["raceId", "driverId"])["milliseconds"].mean().reset_index()
+avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
+
+# ✅ Merge it into results_df
+results_df = results_df.merge(avg_lap_time, on=["raceId", "driverId"], how="left")
+
+print("✅ Merged avg_lap_time into results_df:", results_df.columns)
+
+
+# ✅ Ensure all numeric columns are properly converted
+numeric_columns = ["milliseconds", "grid", "points", "fastestLapSpeed", "avg_lap_time"]  # Add other relevant columns
+for col in numeric_columns:
+    results_df[col] = pd.to_numeric(results_df[col], errors="coerce")  # Convert invalid values to NaN
+    results_df[col].fillna(results_df[col].median(), inplace=True)  # Replace NaNs with median values
+
 
 # ✅ Get current season (2024)
 current_season = 2024
@@ -30,7 +48,7 @@ valid_circuits = races_df[races_df["raceId"].isin(current_season_race_ids)]["cir
 
 def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float):
     """
-    Predicts the final race result.
+    Predicts the final race result with track-specific data.
     """
     if model is None or scaler is None:
         raise ValueError("No trained model found! Please train the model first.")
@@ -38,14 +56,31 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
     # ✅ Ensure input features match the trained model
     feature_names = ["grid", "points", "fastestLapSpeed", "avg_lap_time"]
 
-    # ✅ Fetch average lap time
-    avg_lap_time_series = results_df[
-        (results_df["driverId"] == driver_id) & (results_df["raceId"].isin(current_races["raceId"]))
-    ]["milliseconds"]
 
-    avg_lap_time_series = pd.to_numeric(avg_lap_time_series, errors="coerce")  # Convert to numeric
-    avg_lap_time = avg_lap_time_series.mean()
-    avg_lap_time = avg_lap_time if not np.isnan(avg_lap_time) else 90000  # Default if missing
+    lap_times_df["milliseconds"] = pd.to_numeric(lap_times_df["milliseconds"], errors="coerce")
+    lap_times_df["milliseconds"].fillna(lap_times_df["milliseconds"].median(), inplace=True)
+
+    # ✅ Ensure `milliseconds` is numeric (fixes the TypeError issue)
+    results_df["milliseconds"] = pd.to_numeric(results_df["milliseconds"], errors="coerce")
+    
+    # ✅ Compute track-level average lap time
+    track_avg_lap_time = results_df[results_df["raceId"].isin(
+        races_df[races_df["circuitId"] == circuit_id]["raceId"]
+    )]["milliseconds"].mean()
+
+    # ✅ Compute driver-specific average lap time
+    driver_avg_lap_time = results_df[
+        (results_df["driverId"] == driver_id) & (results_df["raceId"].isin(current_races["raceId"]))
+    ]["milliseconds"].mean()
+
+    # ✅ Use driver lap time if available, otherwise fallback to track average
+    avg_lap_time = driver_avg_lap_time if not np.isnan(driver_avg_lap_time) else track_avg_lap_time
+
+    # ✅ If still NaN, use the median lap time instead of a hardcoded default
+    if np.isnan(avg_lap_time):
+        avg_lap_time = results_df["milliseconds"].median()
+
+    print(f"📊 Avg Lap Time for Driver {driver_id} on Track {circuit_id}: {avg_lap_time}")
 
     # ✅ Create input array
     input_data = pd.DataFrame([[grid, points, fastest_lap, avg_lap_time]], columns=feature_names)
