@@ -118,10 +118,40 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
     avg_qualifying_time = qualifying_df[qualifying_df["driverId"] == driver_id]["avg_qualifying_time"].mean()
     avg_qualifying_time = avg_qualifying_time if not np.isnan(avg_qualifying_time) else qualifying_df["avg_qualifying_time"].median()  # Default to median if missing
 
+    # Fetch the driver's lap times at this circuit
+    driver_circuit_laps = lap_times_df[
+        (lap_times_df["driverId"] == driver_id) & 
+        (lap_times_df["raceId"].isin(races_df[races_df["circuitId"] == circuit_id]["raceId"]))
+    ]
 
-    # ✅ Create input array
-    input_data = pd.DataFrame([[grid, race_points, season_points, fastest_lap, avg_lap_time, avg_pit_time, avg_qualifying_time]],
-                            columns=feature_names)
+    # Get all raceIds for the selected circuit
+    circuit_race_ids = races_df[races_df["circuitId"] == circuit_id]["raceId"]
+
+    # Fetch only THIS driver's lap times for THIS circuit
+    driver_circuit_laps = lap_times_df[
+        (lap_times_df["driverId"] == driver_id) & (lap_times_df["raceId"].isin(circuit_race_ids))
+    ]
+
+    # Compute the driver’s average lap time on THIS circuit
+    driver_avg_lap_time = driver_circuit_laps["milliseconds"].mean()
+
+    # If no lap data exists, fallback to circuit-wide average lap time
+    if np.isnan(driver_avg_lap_time):
+        driver_avg_lap_time = lap_times_df[lap_times_df["raceId"].isin(circuit_race_ids)]["milliseconds"].mean()
+
+    # 🔍 Print to verify correct lap times are used
+    print(f"🚦 Driver {driver_id} - Avg Lap Time at Circuit {circuit_id}: {driver_avg_lap_time}")
+
+
+    # Get circuit features
+    track_info = circuits_df[circuits_df["circuitId"] == circuit_id][["lat", "lng", "alt"]]
+    lat, lng, alt = track_info.iloc[0] if not track_info.empty else (0, 0, 0)
+
+    input_data = pd.DataFrame([[grid, race_points, season_points, fastest_lap, driver_avg_lap_time, 
+                            avg_pit_time, avg_qualifying_time]], 
+                          columns=feature_names)
+
+
 
 
 
@@ -130,7 +160,14 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fast
 
     # ✅ Predict race position
     predicted_position = model.predict(input_data_scaled)[0][0] * 20
+
+    # ✅ Ensure prediction is valid
+    if np.isnan(predicted_position):
+        print("⚠️ Warning: Model returned NaN. Assigning default position (10).")
+        predicted_position = 10  # Assign a default mid-grid position if NaN
+
     predicted_position = max(1, min(round(predicted_position), 20))  # Ensure within range
+
 
     # ✅ Get driver & track names
     driver_row = drivers_df[drivers_df["driverId"] == driver_id]
