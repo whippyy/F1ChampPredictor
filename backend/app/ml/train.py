@@ -14,40 +14,11 @@ results = data["results"]
 races = data["races"]  # ✅ Load races to get `circuitId`
 circuits = data["circuits"]
 lap_times = data["lap_times"]
-qualifying = data["qualifying"]
 
 # ✅ Merge results with races to get `circuitId` and track names
 df = results.merge(races[["raceId", "circuitId", "name"]], on="raceId", how="left") \
             .merge(drivers, on="driverId", how="left") \
             .merge(circuits[["circuitId", "alt"]], on="circuitId", how="left")  # Track altitude
-
-
-# ✅ Convert qualifying lap times to milliseconds
-def time_to_milliseconds(time_str):
-    """Convert '1:26.572' to total milliseconds"""
-    if pd.isna(time_str) or time_str == "\\N":
-        return np.nan  # Handle missing values
-    minutes, seconds = time_str.split(":")
-    return int(minutes) * 60000 + float(seconds) * 1000
-
-# ✅ Apply conversion for q1, q2, q3
-for col in ["q1", "q2", "q3"]:
-    qualifying[col] = qualifying[col].apply(time_to_milliseconds)
-
-# ✅ Compute average qualifying time
-qualifying["avg_qualifying_time"] = qualifying[["q1", "q2", "q3"]].mean(axis=1)
-
-df = df.merge(
-    qualifying[["raceId", "driverId", "position", "avg_qualifying_time"]],
-    on=["raceId", "driverId"], 
-    how="left"
-)
-
-# ✅ Rename column for clarity
-if "position_y" in df.columns:
-    df.rename(columns={"position_y": "qualifying_position"}, inplace=True)
-elif "position" in df.columns:
-    df.rename(columns={"position": "qualifying_position"}, inplace=True)
 
 # ✅ Compute average lap time per race
 avg_lap_time = lap_times.groupby(["raceId", "driverId"])["milliseconds"].mean().reset_index()
@@ -60,15 +31,12 @@ df.dropna(inplace=True)
 
 # ✅ Convert 'fastestLapSpeed' to numeric
 df["fastestLapSpeed"] = pd.to_numeric(df["fastestLapSpeed"], errors="coerce")
-
 df["fastestLapSpeed"].fillna(df["fastestLapSpeed"].mean(), inplace=True)
 
 # ✅ Select relevant features (Removed 'dob' completely)
-features = df[["grid", "points", "fastestLapSpeed", "qualifying_position", "avg_lap_time", "alt", "avg_qualifying_time"]].copy()
+features = df[["grid", "points", "fastestLapSpeed", "avg_lap_time", "alt"]].copy()
 
 # ✅ Convert to numeric & handle missing values
-features["qualifying_position"] = pd.to_numeric(features["qualifying_position"], errors="coerce")
-features["avg_qualifying_time"] = pd.to_numeric(features["avg_qualifying_time"], errors="coerce")
 features.fillna(features.mean(), inplace=True)
 
 # ✅ Normalize features
