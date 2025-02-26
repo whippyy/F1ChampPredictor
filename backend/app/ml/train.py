@@ -17,8 +17,7 @@ lap_times = data["lap_times"]
 
 # ✅ Merge results with races to get `circuitId` and track names
 df = results.merge(races[["raceId", "circuitId", "name"]], on="raceId", how="left") \
-            .merge(drivers, on="driverId", how="left") \
-            .merge(circuits[["circuitId", "alt"]], on="circuitId", how="left")  # Track altitude
+            .merge(drivers, on="driverId", how="left")
 
 # ✅ Compute average lap time per race
 avg_lap_time = lap_times.groupby(["raceId", "driverId"])["milliseconds"].mean().reset_index()
@@ -33,8 +32,8 @@ df.dropna(inplace=True)
 df["fastestLapSpeed"] = pd.to_numeric(df["fastestLapSpeed"], errors="coerce")
 df["fastestLapSpeed"].fillna(df["fastestLapSpeed"].mean(), inplace=True)
 
-# ✅ Select relevant features (Removed 'dob' completely)
-features = df[["grid", "points", "fastestLapSpeed", "avg_lap_time", "alt"]].copy()
+# ✅ Select relevant features (Removed 'dob' and 'alt' completely)
+features = df[["grid", "points", "fastestLapSpeed", "avg_lap_time"]].copy()
 
 # ✅ Convert to numeric & handle missing values
 features.fillna(features.mean(), inplace=True)
@@ -69,4 +68,5 @@ model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, 
 # ✅ Save the trained model
 model.save("app/ml/f1_model.keras")
 print("✅ Model training complete!")
+
 

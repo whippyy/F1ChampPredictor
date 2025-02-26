@@ -30,29 +30,32 @@ valid_circuits = races_df[races_df["raceId"].isin(current_season_race_ids)]["cir
 
 def predict_race(driver_id: int, circuit_id: int, grid: int, points: float, fastest_lap: float):
     """
-    Predicts the final race result based on available features.
+    Predicts the final race result.
     """
     if model is None or scaler is None:
         raise ValueError("No trained model found! Please train the model first.")
 
-    # ✅ Ensure feature names match trained model
-    feature_names = ["grid", "points", "fastestLapSpeed"]
-    input_data = pd.DataFrame([[grid, points, fastest_lap]], columns=feature_names)
+    # ✅ Ensure input features match the trained model
+    feature_names = ["grid", "points", "fastestLapSpeed", "avg_lap_time", "alt"]
+
+    # ✅ Fetch altitude and avg lap time (if they were in training)
+    driver_race_data = races_df[(races_df["circuitId"] == circuit_id)]
+    alt = driver_race_data["alt"].values[0] if "alt" in driver_race_data.columns else 0
+    avg_lap_time = results_df[(results_df["driverId"] == driver_id) & (results_df["raceId"].isin(current_races["raceId"]))]["milliseconds"].mean()
+    avg_lap_time = avg_lap_time if not np.isnan(avg_lap_time) else 90000  # Default if missing
+
+    # ✅ Create input array
+    input_data = pd.DataFrame([[grid, points, fastest_lap, avg_lap_time, alt]], columns=feature_names)
+
+    # ✅ Ensure feature names match the trained scaler
+    print("✅ Expected feature names:", scaler.feature_names_in_)
+    print("✅ Input feature names:", input_data.columns)
+
+    # ✅ Transform input data
     input_data_scaled = scaler.transform(input_data)
 
     # ✅ Predict race position
     predicted_position = model.predict(input_data_scaled)[0][0] * 20
-    predicted_position = max(1, min(round(predicted_position), 20))  # Ensure between 1-20
+    print(f"🔍 Predicted Race Position for Driver {driver_id}: {predicted_position}")
 
-    # ✅ Get driver & track name
-    driver_row = drivers_df[drivers_df["driverId"] == driver_id]
-    driver_name = f"{driver_row['forename'].values[0]} {driver_row['surname'].values[0]}" if not driver_row.empty else "Unknown Driver"
-
-    track_row = circuits_df[circuits_df["circuitId"] == circuit_id]
-    track_name = track_row["name"].values[0] if not track_row.empty else "Unknown Track"
-
-    return {
-        "driver": driver_name,
-        "track": track_name,
-        "predicted_race_position": predicted_position
-    }
+    return max(1, min(round(predicted_position), 20))  # Ensure within range
