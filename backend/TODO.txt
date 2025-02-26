@@ -13,6 +13,9 @@ Filter Teams for a Specific Season
     Create an endpoint to fetch constructors (teams) that participated in the current season.
     Ensure predictions consider only drivers from the filtered teams.
 
+Remove Circuits endpoint
+    No use for it if there is a race endpoint that fetches all of the races in order for an inputed year
+
 
 
 
