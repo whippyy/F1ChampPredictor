@@ -3,6 +3,9 @@ Predict Qualifying Position
     Train a separate model for qualifying position using relevant features like q1, q2, q3 lap times, grid position, and track characteristics.
     Use this prediction as input for the race prediction model.
 
+    Currently using the same model that was use to predict the sunday races. 
+    Currently not working right now. Might have to look into training its own model to be inputed into prediction model to keep it separate.
+
 Carry Over Points for Championship Standings
 
     Maintain a cumulative points table that updates after each predicted race.
