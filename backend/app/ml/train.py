@@ -25,14 +25,14 @@ merged_df = merged_df.merge(circuits, on="circuitId", how="left")
 merged_df = merged_df.merge(standings, on=["driverId", "raceId"], how="left")
 merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left")
 
-print("🔍 Available columns in merged_df:", merged_df.columns.tolist())
-
-# Ensure `race_points` comes from results
-merged_df["race_points"] = merged_df["race_points"]  # Use renamed column
-merged_df["season_points"] = merged_df["season_points"]
-
-# Ensure `season_points` comes from standings
-merged_df["season_points"] = merged_df["points_y"]  # Use season-long accumulated points
+# Ensure race and season points exist before using them
+if "points_x" in merged_df.columns and "points_y" in merged_df.columns:
+    merged_df.rename(columns={"points_x": "race_points", "points_y": "season_points"}, inplace=True)
+elif "points" in merged_df.columns:
+    merged_df["race_points"] = merged_df["points"]
+    merged_df["season_points"] = merged_df["points"]
+else:
+    raise KeyError("⚠️ 'points' column not found in merged_df! Check merged data.")
 
 # Normalize points by max season points to reduce dominance
 max_season_points = merged_df["season_points"].max()
@@ -53,16 +53,6 @@ merged_df = merged_df.merge(qualifying[["raceId", "driverId", "avg_qualifying_ti
 # Ensure only numeric columns are used for median calculations
 numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
 merged_df[numeric_cols] = merged_df[numeric_cols].fillna(merged_df[numeric_cols].median())
-
-# Ensure correct column names before renaming
-if "points_x" in merged_df.columns and "points_y" in merged_df.columns:
-    merged_df.rename(columns={"points_x": "race_points", "points_y": "season_points"}, inplace=True)
-elif "points" in merged_df.columns:
-    merged_df["race_points"] = merged_df["points"]
-    merged_df["season_points"] = merged_df["points"]
-else:
-    raise KeyError("⚠️ 'points' column not found in merged_df! Check merged data.")
-
 
 # ✅ Select features for training
 features = ["grid", "race_points", "season_points", "fastestLapSpeed", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"]
