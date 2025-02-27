@@ -23,16 +23,31 @@ merged_df = merged_df.merge(drivers, on="driverId", how="left")
 merged_df = merged_df.merge(circuits, on="circuitId", how="left")
 merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left")
 
-# ✅ Compute track-specific average lap time
-# ✅ First, merge lap_times with races to get circuitId
-lap_times = lap_times.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
+# ✅ Ensure circuitId exists in lap_times before grouping
+if "circuitId" not in lap_times.columns:
+    lap_times = lap_times.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
 
-# ✅ Now, compute the track-specific average lap time
+# ✅ Compute track-specific average lap time
 avg_lap_time = lap_times.groupby(["driverId", "circuitId"])["milliseconds"].mean().reset_index()
 avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
 merged_df = merged_df.merge(avg_lap_time, on=["driverId", "circuitId"], how="left")
 
-# ✅ Process track-specific qualifying positions
+# ✅ Ensure circuitId exists in qualifying before grouping
+if "circuitId" not in qualifying.columns:
+    qualifying = qualifying.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
+
+# ✅ Convert qualifying times to numeric values (handling missing values)
+for col in ["q1", "q2", "q3"]:
+    qualifying[col] = pd.to_numeric(qualifying[col], errors="coerce")
+
+# ✅ Compute average qualifying time per driver per track
+qualifying["avg_qualifying_time"] = qualifying[["q1", "q2", "q3"]].mean(axis=1)
+
+# ✅ Merge into merged_df
+qualifying_avg = qualifying.groupby(["driverId", "circuitId"])["avg_qualifying_time"].mean().reset_index()
+merged_df = merged_df.merge(qualifying_avg, on=["driverId", "circuitId"], how="left")
+
+# ✅ Compute track-specific qualifying position
 driver_circuit_grid = qualifying.groupby(["driverId", "circuitId"])["position"].mean().reset_index()
 driver_circuit_grid.rename(columns={"position": "grid_position"}, inplace=True)
 merged_df = merged_df.merge(driver_circuit_grid, on=["driverId", "circuitId"], how="left")
