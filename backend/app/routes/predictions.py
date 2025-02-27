@@ -76,7 +76,6 @@ def predict_entire_race(data: TrackPredictionRequest):
             driver_id=driver_id,
             circuit_id=circuit_id,
             grid=grid_position,
-            points=previous_points,
             fastest_lap=90.0
         )
 

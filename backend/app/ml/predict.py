@@ -22,7 +22,7 @@ lap_times_df = data["lap_times"]
 pit_stops_df = data["pit_stops"]
 qualifying_df = data["qualifying"]
 
-# Ensure circuitId exists in lap_times before grouping
+# Ensure circuitId exists in lap_times_df before merging
 if "circuitId" not in lap_times_df.columns:
     lap_times_df = lap_times_df.merge(races_df[["raceId", "circuitId"]], on="raceId", how="left")
 
@@ -30,7 +30,11 @@ if "circuitId" not in lap_times_df.columns:
 avg_lap_time = lap_times_df.groupby(["driverId", "circuitId"])["milliseconds"].mean().reset_index()
 avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
 
-# Merge it into results_df
+# Ensure circuitId exists in results_df before merging
+if "circuitId" not in results_df.columns:
+    results_df = results_df.merge(races_df[["raceId", "circuitId"]], on="raceId", how="left")
+
+# Merge avg_lap_time into results_df
 results_df = results_df.merge(avg_lap_time, on=["driverId", "circuitId"], how="left")
 
 # Ensure numeric columns are properly converted
@@ -46,7 +50,7 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, fastest_lap: float)
     if model is None or scaler is None:
         raise ValueError("No trained model found! Please train the model first.")
 
-    # Compute driver-specific average lap time
+    # Fetch driver-specific average lap time at the specific track
     driver_avg_lap_time = results_df[
         (results_df["driverId"] == driver_id) & (results_df["circuitId"] == circuit_id)
     ]["avg_lap_time"].mean()
@@ -59,11 +63,25 @@ def predict_race(driver_id: int, circuit_id: int, grid: int, fastest_lap: float)
     if np.isnan(driver_avg_lap_time):
         driver_avg_lap_time = results_df["avg_lap_time"].median()
 
-    print(f"📊 Driver {driver_id} - Avg Lap Time at Circuit {circuit_id}: {driver_avg_lap_time}")
+    # Fetch driver-specific average qualifying time at the specific track
+    driver_avg_qualifying_time = qualifying_df[
+        (qualifying_df["driverId"] == driver_id) & (qualifying_df["circuitId"] == circuit_id)
+    ]["avg_qualifying_time"].mean()
 
-    # Prepare input data
-    input_data = pd.DataFrame([[grid, fastest_lap, driver_avg_lap_time]], 
-                              columns=["grid", "fastestLapSpeed", "avg_lap_time"])
+    # Fallback to track-wide average if driver-specific data is missing
+    if np.isnan(driver_avg_qualifying_time):
+        driver_avg_qualifying_time = qualifying_df[qualifying_df["circuitId"] == circuit_id]["avg_qualifying_time"].mean()
+
+    # Ensure valid qualifying time
+    if np.isnan(driver_avg_qualifying_time):
+        driver_avg_qualifying_time = qualifying_df["avg_qualifying_time"].median()
+
+    print(f"📊 Driver {driver_id} - Avg Lap Time at Circuit {circuit_id}: {driver_avg_lap_time}")
+    print(f"📊 Driver {driver_id} - Avg Qualifying Time at Circuit {circuit_id}: {driver_avg_qualifying_time}")
+
+    # Prepare input data with track-specific features
+    input_data = pd.DataFrame([[grid, fastest_lap, driver_avg_lap_time, driver_avg_qualifying_time]], 
+                              columns=["grid", "fastestLapSpeed", "avg_lap_time", "avg_qualifying_time"])
     
     # Transform input data
     input_data_scaled = scaler.transform(input_data)
