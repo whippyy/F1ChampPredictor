@@ -25,7 +25,11 @@ qualifying_df = data["qualifying"]
 
 
 # ✅ Compute average lap time per driver per race
-avg_lap_time = lap_times_df.groupby(["raceId", "driverId"])["milliseconds"].mean().reset_index()
+a# Compute driver’s average lap time per circuit, not just per race
+avg_lap_time = lap_times.groupby(["driverId", "circuitId"])["milliseconds"].mean().reset_index()
+avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
+merged_df = merged_df.merge(avg_lap_time, on=["driverId", "circuitId"], how="left")
+
 avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
 
 # ✅ Merge it into results_df

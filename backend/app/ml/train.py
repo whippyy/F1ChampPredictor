@@ -14,7 +14,6 @@ results = data["results"]
 races = data["races"]
 circuits = data["circuits"]
 lap_times = data["lap_times"]
-standings = data["driver_standings"]
 pit_stops = data["pit_stops"]
 qualifying = data["qualifying"]
 
@@ -22,40 +21,28 @@ qualifying = data["qualifying"]
 merged_df = results.merge(races, on="raceId", how="left")
 merged_df = merged_df.merge(drivers, on="driverId", how="left")
 merged_df = merged_df.merge(circuits, on="circuitId", how="left")
-merged_df = merged_df.merge(standings, on=["driverId", "raceId"], how="left")
 merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left")
 
-# Ensure race and season points exist before using them
-if "points_x" in merged_df.columns and "points_y" in merged_df.columns:
-    merged_df.rename(columns={"points_x": "race_points", "points_y": "season_points"}, inplace=True)
-elif "points" in merged_df.columns:
-    merged_df["race_points"] = merged_df["points"]
-    merged_df["season_points"] = merged_df["points"]
-else:
-    raise KeyError("⚠️ 'points' column not found in merged_df! Check merged data.")
+# ✅ Compute track-specific average lap time
+# ✅ First, merge lap_times with races to get circuitId
+lap_times = lap_times.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
 
-# Normalize points by max season points to reduce dominance
-max_season_points = merged_df["season_points"].max()
-merged_df["race_points"] = merged_df["race_points"] / max_season_points
-merged_df["season_points"] = merged_df["season_points"] / max_season_points
-
-# ✅ Compute average lap time per driver per race
-avg_lap_time = lap_times.groupby(["raceId", "driverId"])['milliseconds'].mean().reset_index()
+# ✅ Now, compute the track-specific average lap time
+avg_lap_time = lap_times.groupby(["driverId", "circuitId"])["milliseconds"].mean().reset_index()
 avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
-merged_df = merged_df.merge(avg_lap_time, on=["raceId", "driverId"], how="left")
+merged_df = merged_df.merge(avg_lap_time, on=["driverId", "circuitId"], how="left")
 
-# ✅ Process qualifying times
-for col in ["q1", "q2", "q3"]:
-    qualifying[col] = pd.to_numeric(qualifying[col], errors="coerce")
-qualifying["avg_qualifying_time"] = qualifying[["q1", "q2", "q3"]].mean(axis=1)
-merged_df = merged_df.merge(qualifying[["raceId", "driverId", "avg_qualifying_time"]], on=["raceId", "driverId"], how="left")
+# ✅ Process track-specific qualifying positions
+driver_circuit_grid = qualifying.groupby(["driverId", "circuitId"])["position"].mean().reset_index()
+driver_circuit_grid.rename(columns={"position": "grid_position"}, inplace=True)
+merged_df = merged_df.merge(driver_circuit_grid, on=["driverId", "circuitId"], how="left")
 
 # Ensure only numeric columns are used for median calculations
 numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
 merged_df[numeric_cols] = merged_df[numeric_cols].fillna(merged_df[numeric_cols].median())
 
 # ✅ Select features for training
-features = ["grid", "race_points", "season_points", "fastestLapSpeed", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"]
+features = ["grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"]
 X = merged_df[features]
 y = merged_df["positionOrder"] / 20.0  # Normalize target
 
@@ -81,4 +68,3 @@ model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, 
 # ✅ Save the trained model
 model.save("app/ml/f1_model.keras")
 print("✅ Model training complete!")
-
