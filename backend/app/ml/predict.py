@@ -37,6 +37,17 @@ if "circuitId" not in results_df.columns:
 # Merge avg_lap_time into results_df
 results_df = results_df.merge(avg_lap_time, on=["driverId", "circuitId"], how="left")
 
+# Ensure circuitId exists in qualifying_df before merging
+if "circuitId" not in qualifying_df.columns:
+    qualifying_df = qualifying_df.merge(races_df[["raceId", "circuitId"]], on="raceId", how="left")
+
+# Convert qualifying times (q1, q2, q3) to numeric values (in milliseconds)
+for col in ["q1", "q2", "q3"]:
+    qualifying_df[col] = pd.to_numeric(qualifying_df[col], errors="coerce")
+
+# Calculate average qualifying time
+qualifying_df["avg_qualifying_time"] = qualifying_df[["q1", "q2", "q3"]].mean(axis=1)
+
 # Ensure numeric columns are properly converted
 numeric_columns = ["grid", "fastestLapSpeed", "avg_lap_time"]
 for col in numeric_columns:
