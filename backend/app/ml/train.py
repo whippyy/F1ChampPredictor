@@ -25,6 +25,17 @@ merged_df = merged_df.merge(circuits, on="circuitId", how="left")
 merged_df = merged_df.merge(standings, on=["driverId", "raceId"], how="left")
 merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left")
 
+# Ensure `race_points` comes from results
+merged_df["race_points"] = merged_df["points"]  # Use race-specific points
+
+# Ensure `season_points` comes from standings
+merged_df["season_points"] = merged_df["points_y"]  # Use season-long accumulated points
+
+# Normalize points by max season points to reduce dominance
+max_season_points = merged_df["season_points"].max()
+merged_df["race_points"] = merged_df["race_points"] / max_season_points
+merged_df["season_points"] = merged_df["season_points"] / max_season_points
+
 # ✅ Compute average lap time per driver per race
 avg_lap_time = lap_times.groupby(["raceId", "driverId"])['milliseconds'].mean().reset_index()
 avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
