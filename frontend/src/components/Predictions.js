@@ -21,13 +21,16 @@ const Prediction = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch races when component mounts
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/races")
+    fetch("http://127.0.0.1:8000/races?season=2024")
       .then((res) => res.json())
-      .then((data) => setRaces(data))
+      .then((data) => {
+        console.log("Fetched races:", data);
+        setRaces([...data.data]); // Force re-render
+      })
       .catch((err) => console.error("Error fetching races:", err));
   }, []);
+  
 
   // Handle race selection change
   const handleRaceChange = (e) => {
@@ -68,16 +71,17 @@ const Prediction = () => {
       {/* Race Selection Dropdown */}
       <select
         value={selectedRace}
-        onChange={handleRaceChange}
+        onChange={(e) => setSelectedRace(e.target.value)}
         className="race-select"
       >
         <option value="">Select a Race</option>
         {races.map((race) => (
-          <option key={race.circuit_id} value={race.circuit_id}>
-            {race.name}
+          <option key={race.raceId} value={race.circuitId}>
+            {race.name} ({race.year})
           </option>
         ))}
       </select>
+
 
       <button onClick={handlePredict} className="predict-btn" disabled={loading}>
         {loading ? "Predicting..." : "Predict Race"}
