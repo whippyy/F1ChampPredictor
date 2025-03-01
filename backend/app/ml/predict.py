@@ -72,7 +72,7 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
     team_name = team_row["name"].values[0] if team_row is not None and not team_row.empty else "Unknown Team"
     team_code = team_row["constructorRef"].values[0] if team_row is not None and "constructorRef" in team_row.columns else None
 
-    # Compute driver-specific stats
+    # Fetch driver-specific average lap time at the specific track
     driver_avg_lap_time = results_df[
         (results_df["driverId"] == driver_id) & (results_df["circuitId"] == circuit_id)
     ]["avg_lap_time"].mean()
@@ -82,13 +82,56 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
     if np.isnan(driver_avg_lap_time):
         driver_avg_lap_time = results_df["avg_lap_time"].median()
 
-    # Prepare input for model
-    input_data = pd.DataFrame([[grid, driver_avg_lap_time]],
-                              columns=["grid", "avg_lap_time"])
+    # Fetch driver-specific average qualifying time
+    driver_avg_qualifying_time = qualifying_df[
+        (qualifying_df["driverId"] == driver_id) & (qualifying_df["circuitId"] == circuit_id)
+    ]["avg_qualifying_time"].mean()
 
+    if np.isnan(driver_avg_qualifying_time):
+        driver_avg_qualifying_time = qualifying_df[qualifying_df["circuitId"] == circuit_id]["avg_qualifying_time"].mean()
+    if np.isnan(driver_avg_qualifying_time):
+        driver_avg_qualifying_time = qualifying_df["avg_qualifying_time"].median()
+
+    # Fetch driver-specific average pit stop time
+    driver_avg_pit_time = pit_stops_df[
+        (pit_stops_df["driverId"] == driver_id) & (pit_stops_df["raceId"].isin(races_df[races_df["circuitId"] == circuit_id]["raceId"]))
+    ]["milliseconds"].mean()
+
+    if np.isnan(driver_avg_pit_time):
+        driver_avg_pit_time = pit_stops_df["milliseconds"].median()
+
+    # Fetch driver-specific grid position
+    grid_position = results_df[
+        (results_df["driverId"] == driver_id) & (results_df["circuitId"] == circuit_id)
+    ]["grid"].mean()
+
+    if np.isnan(grid_position):
+        grid_position = results_df["grid"].median()
+
+    # ✅ Create input data with matching features
+    input_data = pd.DataFrame([[grid_position, driver_avg_lap_time, driver_avg_pit_time, driver_avg_qualifying_time]],
+                              columns=["grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"])
+
+    print(f"🛠️ Model Input Data: {input_data}")
+    print(f"📢 Expected Features During Training: {scaler.feature_names_in_}")
+
+    # Transform input data
     input_data_scaled = scaler.transform(input_data)
+
+    # Predict race position
     predicted_position = model.predict(input_data_scaled)[0][0] * 20
-    predicted_position = max(1, min(round(predicted_position), 20)) if not np.isnan(predicted_position) else 10
+    if np.isnan(predicted_position):
+        print("⚠️ Model returned NaN. Assigning default position (10).")
+        predicted_position = 10
+
+    predicted_position = max(1, min(round(predicted_position), 20))
+
+    # Get driver & track names
+    driver_row = drivers_df[drivers_df["driverId"] == driver_id]
+    driver_name = f"{driver_row['forename'].values[0]} {driver_row['surname'].values[0]}" if not driver_row.empty else "Unknown Driver"
+
+    track_row = circuits_df[circuits_df["circuitId"] == circuit_id]
+    track_name = track_row["name"].values[0] if not track_row.empty else "Unknown Track"
 
     return {
         "driver": driver_name,
