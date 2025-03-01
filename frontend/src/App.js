@@ -23,39 +23,3 @@ const App = () => {
   );
 };
 
-export default App;
-
-
-
-
-
-  return (
-    <div className="bg-white shadow-lg p-6 rounded-lg">
-      <h1 className="text-3xl font-bold text-gray-800">🔮 Predict Race</h1>
-      <input
-        type="text"
-        className="border p-2 mt-4 w-full rounded-lg"
-        placeholder="Enter Race ID"
-        value={raceId}
-        onChange={(e) => setRaceId(e.target.value)}
-      />
-      <button
-        onClick={handlePredict}
-        className="bg-blue-500 text-white px-6 py-2 mt-4 rounded-lg hover:bg-blue-600 transition"
-      >
-        Predict
-      </button>
-
-      {prediction && (
-        <div className="mt-6 bg-gray-50 p-4 rounded-lg">
-          <h2 className="text-xl font-semibold">Predicted Winner: {prediction.driver}</h2>
-          <p>Track: {prediction.track}</p>
-          <p>Position: {prediction.predicted_race_position}</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-
-
