@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
-import Dashboard from "./Dashboard";
-import Prediction from "./Prediction";
-import RacePoints from "./RacePoints";
+import Dashboard from "./components/Dashboard";
+import Prediction from "./components/Predictions";
+import RacePoints from "./components/Racepoints";
 
 const App = () => {
   return (
