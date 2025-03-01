@@ -1,4 +1,18 @@
 import React, { useState, useEffect } from "react";
+import "./Predictions.css";
+
+const teamColors = {
+  Mercedes: "#00D2BE",
+  RedBull: "#1E41FF",
+  Ferrari: "#DC0000",
+  McLaren: "#FF8700",
+  AstonMartin: "#006F62",
+  Alpine: "#0090FF",
+  Haas: "#FFFFFF",
+  AlphaTauri: "#2B4562",
+  AlfaRomeo: "#900000",
+  Williams: "#005AFF",
+};
 
 const Prediction = () => {
   const [races, setRaces] = useState([]);
@@ -25,33 +39,46 @@ const Prediction = () => {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">🏁 Predict a Race</h1>
+    <div className="prediction-container">
+      <h1 className="title">🏁 Race Predictions</h1>
+
+      {/* Race Selection Dropdown */}
       <select
-        className="border p-2 mt-4"
+        value={selectedRace}
         onChange={(e) => setSelectedRace(e.target.value)}
+        className="race-select"
       >
         <option value="">Select a Race</option>
         {races.map((race) => (
-          <option key={race.raceId} value={race.circuitId}>
+          <option key={race.circuit_id} value={race.circuit_id}>
             {race.name}
           </option>
         ))}
       </select>
-      <button onClick={handlePredict} className="bg-blue-500 text-white p-2 mt-4">
-        Predict
+
+      <button onClick={handlePredict} className="predict-btn">
+        Predict Race
       </button>
 
-      <h2 className="text-xl mt-4">Predictions</h2>
-      <ul>
-        {predictions.map((p, index) => (
-          <li key={index} className="border p-2 mt-2">
-            {p.driver} - Position: {p.predicted_race_position}
-          </li>
+      {/* Display Predictions */}
+      <div className="predictions-list">
+        {predictions.map((driver, index) => (
+          <div
+            key={driver.driver_id || index}
+            className="driver-card"
+            style={{ backgroundColor: teamColors[driver.team] || "#444" }}
+          >
+            <img src={driver.image} alt={driver.name} className="driver-image" />
+            <div className="driver-info">
+              <h2>{index + 1}. {driver.name}</h2>
+              <p>{driver.team}</p>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };
 
 export default Prediction;
+
