@@ -27,16 +27,7 @@ export default App;
 
 
 
-const Prediction = () => {
-  const [prediction, setPrediction] = useState(null);
-  const [raceId, setRaceId] = useState("");
 
-  const handlePredict = () => {
-    fetch(`http://127.0.0.1:8000/predict-race/${raceId}`)
-      .then((res) => res.json())
-      .then((data) => setPrediction(data))
-      .catch((err) => console.error("Error predicting race:", err));
-  };
 
   return (
     <div className="bg-white shadow-lg p-6 rounded-lg">
@@ -65,4 +56,6 @@ const Prediction = () => {
     </div>
   );
 };
+
+
 
