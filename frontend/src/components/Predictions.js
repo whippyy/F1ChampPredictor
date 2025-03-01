@@ -25,8 +25,8 @@ const Prediction = () => {
     fetch("http://127.0.0.1:8000/races?season=2024")
       .then((res) => res.json())
       .then((data) => {
-        console.log("Fetched races:", data);
-        setRaces([...data.data]); // Force re-render
+        console.log("Fetched races:", data); // Debugging
+        setRaces(data.data || []); // Ensure it correctly updates state
       })
       .catch((err) => console.error("Error fetching races:", err));
   }, []);
@@ -75,12 +75,19 @@ const Prediction = () => {
         className="race-select"
       >
         <option value="">Select a Race</option>
-        {races.map((race) => (
-          <option key={race.raceId} value={race.circuitId}>
-            {race.name} ({race.year})
-          </option>
-        ))}
+        {races.length > 0 ? (
+          races.map((race) => (
+            <option key={race.raceId} value={race.circuitId}>
+              {race.name} ({race.year})
+            </option>
+          ))
+        ) : (
+          <option disabled>Loading races...</option>
+        )}
       </select>
+
+      <pre>{JSON.stringify(races, null, 2)}</pre>
+
 
 
       <button onClick={handlePredict} className="predict-btn" disabled={loading}>
