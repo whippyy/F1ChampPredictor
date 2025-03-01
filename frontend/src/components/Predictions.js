@@ -14,6 +14,42 @@ const teamColors = {
   Williams: "#005AFF",
 };
 
+const driverImages = {
+  "Max Verstappen": "https://media.formula1.com/d_driver_max_verstappen.png",
+  "Sergio Perez": "https://media.formula1.com/d_driver_sergio_perez.png",
+  "Lewis Hamilton": "https://media.formula1.com/d_driver_lewis_hamilton.png",
+  "George Russell": "https://media.formula1.com/d_driver_george_russell.png",
+  "Charles Leclerc": "https://media.formula1.com/d_driver_charles_leclerc.png",
+  "Carlos Sainz": "https://media.formula1.com/d_driver_carlos_sainz.png",
+  "Lando Norris": "https://media.formula1.com/d_driver_lando_norris.png",
+  "Oscar Piastri": "https://media.formula1.com/d_driver_oscar_piastri.png",
+  "Fernando Alonso": "https://media.formula1.com/d_driver_fernando_alonso.png",
+  "Lance Stroll": "https://media.formula1.com/d_driver_lance_stroll.png",
+  "Pierre Gasly": "https://media.formula1.com/d_driver_pierre_gasly.png",
+  "Esteban Ocon": "https://media.formula1.com/d_driver_esteban_ocon.png",
+  "Kevin Magnussen": "https://media.formula1.com/d_driver_kevin_magnussen.png",
+  "Nico Hulkenberg": "https://media.formula1.com/d_driver_nico_hulkenberg.png",
+  "Yuki Tsunoda": "https://media.formula1.com/d_driver_yuki_tsunoda.png",
+  "Daniel Ricciardo": "https://media.formula1.com/d_driver_daniel_ricciardo.png",
+  "Valtteri Bottas": "https://media.formula1.com/d_driver_valtteri_bottas.png",
+  "Zhou Guanyu": "https://media.formula1.com/d_driver_zhou_guanyu.png",
+  "Alexander Albon": "https://media.formula1.com/d_driver_alexander_albon.png",
+  "Logan Sargeant": "https://media.formula1.com/d_driver_logan_sargeant.png",
+};
+
+const teamLogos = {
+  Mercedes: "https://media.formula1.com/t_team_mercedes.png",
+  RedBull: "https://media.formula1.com/t_team_redbull.png",
+  Ferrari: "https://media.formula1.com/t_team_ferrari.png",
+  McLaren: "https://media.formula1.com/t_team_mclaren.png",
+  AstonMartin: "https://media.formula1.com/t_team_astonmartin.png",
+  Alpine: "https://media.formula1.com/t_team_alpine.png",
+  Haas: "https://media.formula1.com/t_team_haas.png",
+  AlphaTauri: "https://media.formula1.com/t_team_alphatauri.png",
+  AlfaRomeo: "https://media.formula1.com/t_team_alfaromeo.png",
+  Williams: "https://media.formula1.com/t_team_williams.png",
+};
+
 const Prediction = () => {
   const [races, setRaces] = useState([]);
   const [selectedRace, setSelectedRace] = useState("");
@@ -25,19 +61,16 @@ const Prediction = () => {
     fetch("http://127.0.0.1:8000/races?season=2024")
       .then((res) => res.json())
       .then((data) => {
-        console.log("Fetched races:", data); // Debugging
-        setRaces(data.data || []); // Ensure it correctly updates state
+        console.log("Fetched races:", data);
+        setRaces([...data.data]);
       })
       .catch((err) => console.error("Error fetching races:", err));
   }, []);
-  
 
-  // Handle race selection change
   const handleRaceChange = (e) => {
     setSelectedRace(e.target.value);
   };
 
-  // Handle race prediction request
   const handlePredict = () => {
     if (!selectedRace) {
       setError("Please select a race first!");
@@ -68,27 +101,18 @@ const Prediction = () => {
     <div className="prediction-container">
       <h1 className="title">🏁 Race Predictions</h1>
 
-      {/* Race Selection Dropdown */}
       <select
         value={selectedRace}
         onChange={(e) => setSelectedRace(e.target.value)}
         className="race-select"
       >
         <option value="">Select a Race</option>
-        {races.length > 0 ? (
-          races.map((race) => (
-            <option key={race.raceId} value={race.circuitId}>
-              {race.name} ({race.year})
-            </option>
-          ))
-        ) : (
-          <option disabled>Loading races...</option>
-        )}
+        {races.map((race) => (
+          <option key={race.raceId} value={race.circuitId}>
+            {race.name} ({race.year})
+          </option>
+        ))}
       </select>
-
-      <pre>{JSON.stringify(races, null, 2)}</pre>
-
-
 
       <button onClick={handlePredict} className="predict-btn" disabled={loading}>
         {loading ? "Predicting..." : "Predict Race"}
@@ -96,7 +120,6 @@ const Prediction = () => {
 
       {error && <p className="error-msg">{error}</p>}
 
-      {/* Display Predictions */}
       <div className="predictions-list">
         {predictions.length > 0 ? (
           predictions.map((driver, index) => (
@@ -105,10 +128,14 @@ const Prediction = () => {
               className="driver-card"
               style={{ backgroundColor: teamColors[driver.team] || "#444" }}
             >
-              <img src={driver.image} alt={driver.name} className="driver-image" />
+              <img src={driverImages[driver.name] || "https://via.placeholder.com/80"} alt={driver.name} className="driver-headshot" />
               <div className="driver-info">
-                <h2>{index + 1}. {driver.name}</h2>
+                <h2>{driver.name}</h2>
                 <p>{driver.team}</p>
+              </div>
+              <div className="team-logo-container">
+                <span className="position-number">{index + 1}</span>
+                <img src={teamLogos[driver.team] || "https://via.placeholder.com/50"} alt={driver.team} className="team-logo" />
               </div>
             </div>
           ))
@@ -121,5 +148,6 @@ const Prediction = () => {
 };
 
 export default Prediction;
+
 
 

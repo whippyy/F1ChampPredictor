@@ -1,42 +1,79 @@
 .prediction-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-  
-  .driver-card {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 15px;
-    border-radius: 10px;
-    width: 80%;
-    transition: transform 0.2s ease-in-out;
-  }
-  
-  .driver-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-  }
-  
-  .driver-image {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-right: 15px;
-  }
-  
-  .driver-info {
-    color: white;
-  }
-  
-  .driver-info h2 {
-    font-size: 18px;
-    margin: 0;
-  }
-  
-  .driver-info p {
-    font-size: 14px;
-    margin: 0;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.driver-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  border-radius: 10px;
+  width: 80%;
+  position: relative;
+  transition: transform 0.2s ease-in-out;
+}
+
+.driver-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.driver-headshot {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+}
+
+.driver-info {
+  flex-grow: 1;
+  color: white;
+  text-align: left;
+}
+
+.driver-info h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.driver-info p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Team logo container */
+.team-logo-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.team-logo {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+/* Position number */
+.position-number {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: white;
+  color: black;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+}
