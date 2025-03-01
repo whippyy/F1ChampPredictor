@@ -15,7 +15,11 @@ def get_races(season: int = Query(..., description="F1 season year")):
     if season_races.empty:
         return {"message": f"No races found for season {season}", "data": []}
 
+    # ✅ Replace NaN values with an empty string or a default value
+    season_races = season_races.fillna("Unknown")
+
     return {
         "message": f"Races for season {season} fetched successfully",
         "data": season_races.to_dict(orient="records")
     }
+
