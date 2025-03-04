@@ -134,6 +134,7 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     # Ensure the predicted result is within range and corresponding team information is updated
     result = {
+        "driver_id": driver_id,  # Include driver_id in the result
         "driver": driver_name,
         "driver_code": driver_code,
         "team": team_name,
