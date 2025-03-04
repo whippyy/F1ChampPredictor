@@ -143,4 +143,3 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
     }
 
     return result
-
