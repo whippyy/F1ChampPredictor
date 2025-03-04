@@ -13,6 +13,7 @@ current_year = 2024
 races_df = data["races"]
 results_df = data["results"]
 drivers_df = data["drivers"]
+constructors_df = data["constructors"]
 
 # ✅ Filter current season races
 current_races = races_df[races_df["year"] == current_year]
@@ -80,12 +81,33 @@ def predict_entire_race(data: TrackPredictionRequest):
     # ✅ Sort by race position
     raw_predictions.sort(key=lambda x: x[1])
 
-    # ✅ Assign unique positions
+    # ✅ Assign unique positions starting from 1
     for i, (_, _, prediction) in enumerate(raw_predictions):
         prediction["predicted_race_position"] = i + 1
 
-    # ✅ Return results
-    predictions = [prediction for _, _, prediction in raw_predictions]
+    # ✅ Gather results with driver and team info
+    predictions = []
+    for _, _, prediction in raw_predictions:
+        # Fetch driver info
+        driver_row = drivers_df[drivers_df["driverId"] == prediction["driver_id"]]
+        driver_name = f"{driver_row['forename'].values[0]} {driver_row['surname'].values[0]}" if not driver_row.empty else "Unknown Driver"
+        driver_code = driver_row["code"].values[0] if "code" in driver_row.columns and not driver_row.empty else None
+
+        # Fetch team info
+        team_id = results_df[results_df["driverId"] == prediction["driver_id"]]["constructorId"].values[0]
+        team_row = constructors_df[constructors_df["constructorId"] == team_id]
+        team_name = team_row["name"].values[0] if team_row is not None and not team_row.empty else "Unknown Team"
+        team_code = team_row["constructorRef"].values[0] if team_row is not None and "constructorRef" in team_row.columns else None
+
+        prediction.update({
+            "driver": driver_name,
+            "driver_code": driver_code,
+            "team": team_name,
+            "team_code": team_code,
+            "track": prediction["track"]
+        })
+
+        predictions.append(prediction)
 
     return {
         "track": predictions[0]["track"],
