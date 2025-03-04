@@ -133,14 +133,29 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     predicted_position = max(1, min(round(predicted_position), 20))
 
-    # Get driver & track names
+    # Fetch driver info
     driver_row = drivers_df[drivers_df["driverId"] == driver_id]
     driver_name = f"{driver_row['forename'].values[0]} {driver_row['surname'].values[0]}" if not driver_row.empty else "Unknown Driver"
+    driver_code = driver_row["code"].values[0] if "code" in driver_row.columns and not driver_row.empty else None
 
-    track_row = circuits_df[circuits_df["circuitId"] == circuit_id]
-    track_name = track_row["name"].values[0] if not track_row.empty else "Unknown Track"
+    # Fetch team info using constructorId (make sure constructorId is correctly matched)
+    team_id = results_df[results_df["driverId"] == driver_id]["constructorId"].values[0] if "constructorId" in results_df.columns else None
 
-    return {
+    if team_id is not None:
+        team_row = data["constructors"][data["constructors"]["constructorId"] == team_id]
+    else:
+        team_row = None
+
+    team_name = team_row["name"].values[0] if team_row is not None and not team_row.empty else "Unknown Team"
+    team_code = team_row["constructorRef"].values[0] if team_row is not None and "constructorRef" in team_row.columns else None
+
+    # Predict race position (ensure model input/output is correct)
+    input_data_scaled = scaler.transform(input_data)  # your preprocessed input data
+    predicted_position = model.predict(input_data_scaled)[0][0] * 20
+    predicted_position = max(1, min(round(predicted_position), 20))
+
+    # Ensure the predicted result is within range and corresponding team information is updated
+    result = {
         "driver": driver_name,
         "driver_code": driver_code,
         "team": team_name,
@@ -148,3 +163,4 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
         "track": circuits_df[circuits_df["circuitId"] == circuit_id]["name"].values[0] if circuit_id in circuits_df["circuitId"].values else "Unknown Track",
         "predicted_race_position": predicted_position
     }
+
