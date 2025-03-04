@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 from app.data_loader import load_csv_data
 import joblib
-from tensorflow.keras.callbacks import EarlyStopping
+
 
 # ✅ Load all data files
 data = load_csv_data()
@@ -83,7 +83,7 @@ joblib.dump(scaler, "app/ml/scaler.pkl")
 # ✅ Split dataset
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# ✅ Define and train the model with dropout and early stopping
+# ✅ Define and train the model with dropout
 model = keras.Sequential([
     keras.layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
     keras.layers.Dropout(0.2),  # Dropout layer to reduce overfitting
@@ -92,12 +92,9 @@ model = keras.Sequential([
     keras.layers.Dense(1, activation='linear')  # Linear activation for regression
 ])
 
-# Early stopping callback to prevent overfitting
-early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-
-# Compile and train the model
+# ✅ Compile and train the model (without callbacks)
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
-model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test), callbacks=[early_stopping])
+model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test))
 
 # ✅ Save the trained model
 model.save("app/ml/f1_model.keras")
@@ -110,3 +107,4 @@ print("Root Mean Squared Error (RMSE):", rmse)
 
 # ✅ Model summary
 model.summary()
+
