@@ -68,8 +68,6 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     # Fetch team info
     team_id = results_df[results_df["driverId"] == driver_id]["constructorId"].values[0] if "constructorId" in results_df.columns else None
-
-    # Check if a team exists for this driver, and handle cases where the team might not exist
     if team_id is not None:
         team_row = data["constructors"][data["constructors"]["constructorId"] == team_id]
     else:
@@ -118,9 +116,6 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
     input_data = pd.DataFrame([[grid_position, driver_avg_lap_time, driver_avg_pit_time, driver_avg_qualifying_time]],
                               columns=["grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"])
 
-    print(f"🛠️ Model Input Data: {input_data}")
-    print(f"📢 Expected Features During Training: {scaler.feature_names_in_}")
-
     # Transform input data
     input_data_scaled = scaler.transform(input_data)
 
@@ -134,7 +129,7 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     # Ensure the predicted result is within range and corresponding team information is updated
     result = {
-        "driver_id": driver_id,  # Include driver_id in the result
+        "driver_id": driver_id,
         "driver": driver_name,
         "driver_code": driver_code,
         "team": team_name,

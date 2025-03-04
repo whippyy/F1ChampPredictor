@@ -3,9 +3,11 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
 from app.data_loader import load_csv_data
 import joblib
+from tensorflow.keras.callbacks import EarlyStopping
 
 # ✅ Load all data files
 data = load_csv_data()
@@ -69,17 +71,30 @@ joblib.dump(scaler, "app/ml/scaler.pkl")
 # ✅ Split dataset
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# ✅ Define and train the model
+# ✅ Define and train the model with dropout and early stopping
 model = keras.Sequential([
     keras.layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
+    keras.layers.Dropout(0.2),  # Add dropout
     keras.layers.Dense(64, activation='relu'),
     keras.layers.Dense(32, activation='relu'),
-    keras.layers.Dense(1, activation='sigmoid')  # Output between 0 and 1
+    keras.layers.Dense(1, activation='linear')  # Change sigmoid to linear for continuous output
 ])
 
+# Early stopping callback to prevent overfitting
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+
+# Compile and train the model
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
-model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # ✅ Save the trained model
 model.save("app/ml/f1_model.keras")
 print("✅ Model training complete!")
+
+# ✅ Evaluate the model
+y_pred = model.predict(X_test)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+print("Root Mean Squared Error (RMSE):", rmse)
+
+# ✅ Model summary
+model.summary()
