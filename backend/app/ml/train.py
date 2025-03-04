@@ -18,11 +18,15 @@ circuits = data["circuits"]
 lap_times = data["lap_times"]
 pit_stops = data["pit_stops"]
 qualifying = data["qualifying"]
+constructors = data["constructors"]
+driver_standings = data["driver_standings"]
+constructor_standings = data["standings"]
 
-# ✅ Merge relevant tables
+# ✅ Merge all the relevant data into one dataframe
 merged_df = results.merge(races, on="raceId", how="left")
 merged_df = merged_df.merge(drivers, on="driverId", how="left")
 merged_df = merged_df.merge(circuits, on="circuitId", how="left")
+merged_df = merged_df.merge(constructors, on="constructorId", how="left")
 merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left")
 
 # ✅ Ensure circuitId exists in lap_times before grouping
@@ -54,14 +58,22 @@ driver_circuit_grid = qualifying.groupby(["driverId", "circuitId"])["position"].
 driver_circuit_grid.rename(columns={"position": "grid_position"}, inplace=True)
 merged_df = merged_df.merge(driver_circuit_grid, on=["driverId", "circuitId"], how="left")
 
-# Ensure only numeric columns are used for median calculations
+# ✅ Merge additional driver and constructor standings info
+merged_df = merged_df.merge(driver_standings, on=["raceId", "driverId"], how="left", suffixes=("", "_driver_standing"))
+merged_df = merged_df.merge(constructor_standings, on=["raceId", "constructorId"], how="left", suffixes=("", "_constructor_standing"))
+
+# ✅ Ensure only numeric columns are used for median calculations
 numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
 merged_df[numeric_cols] = merged_df[numeric_cols].fillna(merged_df[numeric_cols].median())
 
-# ✅ Select features for training
-features = ["grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"]
+# ✅ Select features for training - Using more features from the merged data
+features = [
+    "grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
+    "positionOrder", "driver_standing", "constructor_standing"
+]
+
 X = merged_df[features]
-y = merged_df["positionOrder"] / 20.0  # Normalize target
+y = merged_df["positionOrder"] / 20.0  # Normalize target (assuming 20 as max positions)
 
 # ✅ Normalize numeric features
 scaler = StandardScaler()
@@ -74,10 +86,10 @@ X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, 
 # ✅ Define and train the model with dropout and early stopping
 model = keras.Sequential([
     keras.layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
-    keras.layers.Dropout(0.2),  # Add dropout
+    keras.layers.Dropout(0.2),  # Dropout layer to reduce overfitting
     keras.layers.Dense(64, activation='relu'),
     keras.layers.Dense(32, activation='relu'),
-    keras.layers.Dense(1, activation='linear')  # Change sigmoid to linear for continuous output
+    keras.layers.Dense(1, activation='linear')  # Linear activation for regression
 ])
 
 # Early stopping callback to prevent overfitting
