@@ -68,9 +68,16 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     # Fetch team info
     team_id = results_df[results_df["driverId"] == driver_id]["constructorId"].values[0] if "constructorId" in results_df.columns else None
-    team_row = data["constructors"][data["constructors"]["constructorId"] == team_id] if team_id else None
+
+    # Check if a team exists for this driver, and handle cases where the team might not exist
+    if team_id is not None:
+        team_row = data["constructors"][data["constructors"]["constructorId"] == team_id]
+    else:
+        team_row = None
+
     team_name = team_row["name"].values[0] if team_row is not None and not team_row.empty else "Unknown Team"
     team_code = team_row["constructorRef"].values[0] if team_row is not None and "constructorRef" in team_row.columns else None
+
 
     # Fetch driver-specific average lap time at the specific track
     driver_avg_lap_time = results_df[
