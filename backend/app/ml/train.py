@@ -22,12 +22,15 @@ constructors = data["constructors"]
 driver_standings = data["driver_standings"]
 constructor_standings = data["standings"]
 
+# ✅ Merge races first, with circuitId
+merged_df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left", suffixes=("_result", "_race"))
+
 # ✅ Merge all the relevant data into one dataframe
-merged_df = results.merge(races, on="raceId", how="left")
-merged_df = merged_df.merge(drivers, on="driverId", how="left")
-merged_df = merged_df.merge(circuits, on="circuitId", how="left")
-merged_df = merged_df.merge(constructors, on="constructorId", how="left")
-merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left")
+merged_df = merged_df.merge(drivers, on="driverId", how="left", suffixes=("_race", "_driver"))
+merged_df = merged_df.merge(circuits, on="circuitId", how="left", suffixes=("_driver", "_circuit"))
+merged_df = merged_df.merge(constructors, on="constructorId", how="left", suffixes=("_circuit", "_constructor"))
+merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left", suffixes=("_constructor", "_pit"))
+
 
 # ✅ Ensure circuitId exists in lap_times before grouping
 if "circuitId" not in lap_times.columns:
