@@ -4,10 +4,10 @@ import tensorflow as tf
 from tensorflow import keras
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from app.data_loader import load_csv_data
 import joblib
-
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 # ✅ Load all data files
 data = load_csv_data()
@@ -30,7 +30,6 @@ merged_df = merged_df.merge(drivers, on="driverId", how="left", suffixes=("_race
 merged_df = merged_df.merge(circuits, on="circuitId", how="left", suffixes=("_driver", "_circuit"))
 merged_df = merged_df.merge(constructors, on="constructorId", how="left", suffixes=("_circuit", "_constructor"))
 merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left", suffixes=("_constructor", "_pit"))
-
 
 # ✅ Ensure circuitId exists in lap_times before grouping
 if "circuitId" not in lap_times.columns:
@@ -95,9 +94,21 @@ model = keras.Sequential([
     keras.layers.Dense(1, activation='linear')  # Linear activation for regression
 ])
 
-# ✅ Compile and train the model (without callbacks)
+# ✅ Compile the model
 model.compile(optimizer='adam', loss='mse', metrics=['mae'])
-model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test))
+
+# ✅ Early Stopping and Learning Rate Reduction
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.0001)
+
+# ✅ Train the model with callbacks
+history = model.fit(
+    X_train, y_train, 
+    epochs=150, 
+    batch_size=32, 
+    validation_data=(X_test, y_test),
+    callbacks=[early_stopping, reduce_lr]
+)
 
 # ✅ Save the trained model
 model.save("app/ml/f1_model.keras")
@@ -106,7 +117,9 @@ print("✅ Model training complete!")
 # ✅ Evaluate the model
 y_pred = model.predict(X_test)
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+mae = mean_absolute_error(y_test, y_pred)
 print("Root Mean Squared Error (RMSE):", rmse)
+print("Mean Absolute Error (MAE):", mae)
 
 # ✅ Model summary
 model.summary()
