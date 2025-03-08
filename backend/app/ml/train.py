@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import layers, models
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -85,42 +83,45 @@ joblib.dump(scaler, "app/ml/scaler.pkl")
 # ✅ Split dataset
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# ✅ Define and train the model with dropout
-model = models.Sequential([
-    layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
-    layers.Dropout(0.2),  # Dropout layer to reduce overfitting
-    layers.Dense(64, activation='relu'),
-    layers.Dense(32, activation='relu'),
-    layers.Dense(1, activation='linear')  # Linear activation for regression
-])
+# ✅ Define placeholders for TensorFlow 1.x
+tf.reset_default_graph()  # Clear any existing graph
+X_placeholder = tf.placeholder(tf.float32, shape=(None, X_train.shape[1]))
+y_placeholder = tf.placeholder(tf.float32, shape=(None, 1))
 
-# ✅ Compile the model
-model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+# ✅ Define the model
+hidden1 = tf.layers.dense(X_placeholder, 128, activation=tf.nn.relu)
+dropout1 = tf.layers.dropout(hidden1, rate=0.2)
+hidden2 = tf.layers.dense(dropout1, 64, activation=tf.nn.relu)
+hidden3 = tf.layers.dense(hidden2, 32, activation=tf.nn.relu)
+output = tf.layers.dense(hidden3, 1, activation=None)
 
-# ✅ Early Stopping and Learning Rate Reduction
-early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=0.0001)
+# ✅ Define loss and optimizer
+loss = tf.losses.mean_squared_error(y_placeholder, output)
+optimizer = tf.train.AdamOptimizer().minimize(loss)
 
-# ✅ Train the model with callbacks
-history = model.fit(
-    X_train, y_train, 
-    epochs=150, 
-    batch_size=32, 
-    validation_data=(X_test, y_test),
-    callbacks=[early_stopping, reduce_lr]
-)
+# ✅ Initialize variables
+init = tf.global_variables_initializer()
 
-# ✅ Save the trained model
-model.save("app/ml/f1_model.keras")
-print("✅ Model training complete!")
+# ✅ Train the model
+with tf.Session() as sess:
+    sess.run(init)
+    
+    # Training loop
+    for epoch in range(150):
+        _, train_loss = sess.run([optimizer, loss], feed_dict={X_placeholder: X_train, y_placeholder: y_train.values.reshape(-1, 1)})
+        
+        # Print loss every 10 epochs
+        if epoch % 10 == 0:
+            print(f"Epoch {epoch}, Loss: {train_loss}")
+    
+    # Evaluate the model
+    y_pred = sess.run(output, feed_dict={X_placeholder: X_test})
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    mae = mean_absolute_error(y_test, y_pred)
+    print("Root Mean Squared Error (RMSE):", rmse)
+    print("Mean Absolute Error (MAE):", mae)
 
-# ✅ Evaluate the model
-y_pred = model.predict(X_test)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-mae = mean_absolute_error(y_test, y_pred)
-print("Root Mean Squared Error (RMSE):", rmse)
-print("Mean Absolute Error (MAE):", mae)
-
-# ✅ Model summary
-model.summary()
-
+    # Save the model
+    saver = tf.train.Saver()
+    saver.save(sess, "app/ml/f1_model.ckpt")
+    print("✅ Model training complete!")
