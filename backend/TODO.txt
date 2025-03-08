@@ -19,6 +19,11 @@ Filter Teams for a Specific Season (Done)
 Remove Circuits endpoint
     No use for it if there is a race endpoint that fetches all of the races in order for an inputed year
 
+Retrain model to take in all of the data
+
+Issues:
+    predictions are all the same order across races
+
 
 
 
