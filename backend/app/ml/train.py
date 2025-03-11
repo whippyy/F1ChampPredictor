@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras import layers, models
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -71,8 +72,10 @@ merged_df[numeric_cols] = merged_df[numeric_cols].fillna(merged_df[numeric_cols]
 # ✅ Select features for training - Using more features from the merged data
 features = [
     "grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
-    "positionOrder", "driver_standing", "constructor_standing"
+    "points_driver_standing", "position_driver_standing",
+    "points_constructor_standing", "position_constructor_standing"
 ]
+
 print("Columns in merged_df:", merged_df.columns)
 
 X = merged_df[features]
