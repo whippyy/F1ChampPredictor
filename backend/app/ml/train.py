@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from app.data_loader import load_csv_data
 import joblib
+from xgboost import XGBRegressor
 
 # ✅ Load all data files
 data = load_csv_data()
@@ -73,9 +74,8 @@ joblib.dump(scaler, "app/ml/scaler.pkl")
 # ✅ Split dataset
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# ✅ Train XGBoost model
-model = xgb.XGBRegressor(
-    n_estimators=500,
+model = XGBRegressor(
+    n_estimators=200,
     learning_rate=0.05,
     max_depth=6,
     subsample=0.8,
@@ -83,7 +83,13 @@ model = xgb.XGBRegressor(
     random_state=42
 )
 
-model.fit(X_train, y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=10, verbose=True)
+model.fit(
+    X_train, y_train, 
+    eval_set=[(X_test, y_test)], 
+    early_stopping_rounds=10, 
+    verbose=True
+)
+
 
 # ✅ Save the trained model
 joblib.dump(model, "app/ml/f1_xgb_model.pkl")
