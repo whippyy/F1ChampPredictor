@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 import xgboost as xgb
+from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from app.data_loader import load_csv_data
 import joblib
-from xgboost import XGBRegressor
 
 # ✅ Load all data files
 data = load_csv_data()
@@ -18,8 +18,8 @@ lap_times = data["lap_times"]
 pit_stops = data["pit_stops"]
 qualifying = data["qualifying"]
 constructors = data["constructors"]
-driver_standings = data["driver_standings"]
-constructor_standings = data["standings"]
+driver_standings = data["driver_standings"].copy()
+constructor_standings = data["standings"].copy()
 
 # ✅ Merge races first, with circuitId
 merged_df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
@@ -28,7 +28,11 @@ merged_df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left
 merged_df = merged_df.merge(drivers, on="driverId", how="left")
 merged_df = merged_df.merge(circuits, on="circuitId", how="left")
 merged_df = merged_df.merge(constructors, on="constructorId", how="left")
-merged_df = merged_df.merge(pit_stops.groupby("raceId").agg({'milliseconds':'mean'}).rename(columns={'milliseconds':'avg_pit_time'}), on="raceId", how="left")
+merged_df = merged_df.merge(
+    pit_stops.groupby("raceId").agg({'milliseconds': 'mean'}).rename(columns={'milliseconds': 'avg_pit_time'}),
+    on="raceId",
+    how="left"
+)
 
 # ✅ Compute track-specific average lap time
 lap_times = lap_times.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
@@ -45,13 +49,17 @@ qualifying_avg = qualifying.groupby(["driverId", "circuitId"])["avg_qualifying_t
 merged_df = merged_df.merge(qualifying_avg, on=["driverId", "circuitId"], how="left")
 
 # ✅ Merge standings
-driver_standings = driver_standings[["raceId", "driverId", "points", "position"]]
+driver_standings = driver_standings[["raceId", "driverId", "points", "position"]].copy()
 driver_standings.rename(columns={"points": "driver_points", "position": "driver_position"}, inplace=True)
 merged_df = merged_df.merge(driver_standings, on=["raceId", "driverId"], how="left")
 
-constructor_standings = constructor_standings[["raceId", "constructorId", "points", "position"]]
+constructor_standings = constructor_standings[["raceId", "constructorId", "points", "position"]].copy()
 constructor_standings.rename(columns={"points": "constructor_points", "position": "constructor_position"}, inplace=True)
 merged_df = merged_df.merge(constructor_standings, on=["raceId", "constructorId"], how="left")
+
+# ✅ Check for NaN values before training
+print("\n🛠️ Checking missing values before training:")
+print(merged_df.isna().sum())
 
 # ✅ Fill missing values
 numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
@@ -62,7 +70,6 @@ features = [
     "grid", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
     "driver_points", "driver_position", "constructor_points", "constructor_position"
 ]
-
 y = merged_df["positionOrder"] / 20.0  # Normalize target (assuming 20 positions)
 X = merged_df[features]
 
@@ -74,6 +81,7 @@ joblib.dump(scaler, "app/ml/scaler.pkl")
 # ✅ Split dataset
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
+# ✅ Initialize the XGBRegressor model
 model = XGBRegressor(
     n_estimators=200,
     learning_rate=0.05,
@@ -83,22 +91,24 @@ model = XGBRegressor(
     random_state=42
 )
 
+# ✅ Fit the model with early stopping
 model.fit(
-    X_train, y_train, 
-    eval_set=[(X_test, y_test)], 
-    early_stopping_rounds=10, 
+    X_train, y_train,
+    eval_set=[(X_test, y_test)],
+    early_stopping_rounds=10,  # Stops training if no improvement after 10 rounds
+    eval_metric="rmse",  # Use RMSE for regression
     verbose=True
 )
 
-
 # ✅ Save the trained model
 joblib.dump(model, "app/ml/f1_xgb_model.pkl")
-print("✅ Model training complete!")
+print("\n✅ Model training complete!")
 
 # ✅ Evaluate the model
 y_pred = model.predict(X_test)
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 mae = mean_absolute_error(y_test, y_pred)
-print("Root Mean Squared Error (RMSE):", rmse)
-print("Mean Absolute Error (MAE):", mae)
 
+print("\n📊 **Model Performance:**")
+print(f"🔹 Root Mean Squared Error (RMSE): {rmse:.4f}")
+print(f"🔹 Mean Absolute Error (MAE): {mae:.4f}")
