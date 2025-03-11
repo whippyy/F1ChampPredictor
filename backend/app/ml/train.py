@@ -90,12 +90,12 @@ joblib.dump(scaler, "app/ml/scaler.pkl")
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
 # ✅ Define and train the model with dropout
-model = models.Sequential([
-    layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
-    layers.Dropout(0.2),  # Dropout layer to reduce overfitting
-    layers.Dense(64, activation='relu'),
-    layers.Dense(32, activation='relu'),
-    layers.Dense(1, activation='linear')  # Linear activation for regression
+model = Sequential([
+    Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
+    Dropout(0.2),  # Dropout layer to reduce overfitting
+    Dense(64, activation='relu'),
+    Dense(32, activation='relu'),
+    Dense(1, activation='linear')  # Linear activation for regression
 ])
 
 # ✅ Compile the model
