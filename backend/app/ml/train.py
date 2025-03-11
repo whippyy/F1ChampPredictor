@@ -73,6 +73,7 @@ features = [
     "grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
     "positionOrder", "driver_standing", "constructor_standing"
 ]
+print("Columns in merged_df:", merged_df.columns)
 
 X = merged_df[features]
 y = merged_df["positionOrder"] / 20.0  # Normalize target (assuming 20 as max positions)
