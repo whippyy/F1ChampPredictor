@@ -103,14 +103,19 @@ model = XGBRegressor(
     colsample_bytree=0.8,
     random_state=42
 )
-
 # ✅ Fit the model without early stopping
+evals_result = {}  # Prepare dictionary to store evaluation results
+
 model.fit(
     X_train, y_train,
     eval_set=[(X_test, y_test)],
-    evals_result={},
     verbose=True
 )
+
+# ✅ Store evaluation results after training
+evals_result = model.evals_result()
+print("\n📊 Evaluation Results:", evals_result)
+
 
 # ✅ Save the trained model
 joblib.dump(model, "app/ml/f1_xgb_model.pkl")
