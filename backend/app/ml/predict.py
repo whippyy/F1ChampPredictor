@@ -56,7 +56,7 @@ for col in numeric_columns:
 
 def predict_race(driver_id: int, circuit_id: int, grid: int):
     """
-    Predicts the final race result with track-specific data.
+    Predicts the final race result using all the training features.
     """
     if model is None or scaler is None:
         raise ValueError("No trained model found! Please train the model first.")
@@ -68,66 +68,59 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     # Fetch team info
     team_id = results_df[results_df["driverId"] == driver_id]["constructorId"].values[0] if "constructorId" in results_df.columns else None
+    team_name, team_code = "Unknown Team", None
     if team_id is not None:
         team_row = data["constructors"][data["constructors"]["constructorId"] == team_id]
-    else:
-        team_row = None
+        if not team_row.empty:
+            team_name = team_row["name"].values[0]
+            team_code = team_row["constructorRef"].values[0] if "constructorRef" in team_row.columns else None
 
-    team_name = team_row["name"].values[0] if team_row is not None and not team_row.empty else "Unknown Team"
-    team_code = team_row["constructorRef"].values[0] if team_row is not None and "constructorRef" in team_row.columns else None
+    # Extract all features used for training
+    feature_columns = [
+        "grid", "fastestLapSpeed", "avg_lap_time", "avg_pit_time", "avg_qualifying_time", "wins", 
+        "points", "constructor_standing", "driver_standing"
+    ]
 
-    # Fetch driver-specific average lap time at the specific track
-    driver_avg_lap_time = results_df[
-        (results_df["driverId"] == driver_id) & (results_df["circuitId"] == circuit_id)
-    ]["avg_lap_time"].mean()
+    # Fetch race-specific features
+    driver_results = results_df[(results_df["driverId"] == driver_id) & (results_df["circuitId"] == circuit_id)]
 
-    if np.isnan(driver_avg_lap_time):
-        driver_avg_lap_time = results_df[results_df["circuitId"] == circuit_id]["avg_lap_time"].mean()
-    if np.isnan(driver_avg_lap_time):
-        driver_avg_lap_time = results_df["avg_lap_time"].median()
+    # Compute missing features
+    avg_lap_time = driver_results["avg_lap_time"].mean()
+    avg_pit_time = pit_stops_df[(pit_stops_df["driverId"] == driver_id) & 
+                                (pit_stops_df["raceId"].isin(races_df[races_df["circuitId"] == circuit_id]["raceId"]))]["milliseconds"].mean()
+    avg_qualifying_time = qualifying_df[(qualifying_df["driverId"] == driver_id) & 
+                                        (qualifying_df["circuitId"] == circuit_id)]["avg_qualifying_time"].mean()
+    fastest_lap_speed = driver_results["fastestLapSpeed"].mean()
+    wins = driver_results["positionOrder"].eq(1).sum()  # Number of wins
+    points = driver_results["points"].sum()
+    
+    constructor_standing = driver_results["constructorId"].map(lambda x: results_df[results_df["constructorId"] == x]["points"].sum()).mean()
+    driver_standing = points  # Could be replaced with a ranking if available
 
-    # Fetch driver-specific average qualifying time
-    driver_avg_qualifying_time = qualifying_df[
-        (qualifying_df["driverId"] == driver_id) & (qualifying_df["circuitId"] == circuit_id)
-    ]["avg_qualifying_time"].mean()
+    # Fill missing values with dataset medians
+    avg_lap_time = avg_lap_time if not np.isnan(avg_lap_time) else results_df["avg_lap_time"].median()
+    avg_pit_time = avg_pit_time if not np.isnan(avg_pit_time) else pit_stops_df["milliseconds"].median()
+    avg_qualifying_time = avg_qualifying_time if not np.isnan(avg_qualifying_time) else qualifying_df["avg_qualifying_time"].median()
+    fastest_lap_speed = fastest_lap_speed if not np.isnan(fastest_lap_speed) else results_df["fastestLapSpeed"].median()
+    wins = wins if wins is not None else 0
+    points = points if not np.isnan(points) else 0
+    constructor_standing = constructor_standing if not np.isnan(constructor_standing) else results_df["points"].median()
+    driver_standing = driver_standing if not np.isnan(driver_standing) else 0
 
-    if np.isnan(driver_avg_qualifying_time):
-        driver_avg_qualifying_time = qualifying_df[qualifying_df["circuitId"] == circuit_id]["avg_qualifying_time"].mean()
-    if np.isnan(driver_avg_qualifying_time):
-        driver_avg_qualifying_time = qualifying_df["avg_qualifying_time"].median()
+    # Construct feature vector
+    input_data = pd.DataFrame([[
+        grid, fastest_lap_speed, avg_lap_time, avg_pit_time, avg_qualifying_time, wins, 
+        points, constructor_standing, driver_standing
+    ]], columns=feature_columns)
 
-    # Fetch driver-specific average pit stop time
-    driver_avg_pit_time = pit_stops_df[
-        (pit_stops_df["driverId"] == driver_id) & (pit_stops_df["raceId"].isin(races_df[races_df["circuitId"] == circuit_id]["raceId"]))
-    ]["milliseconds"].mean()
-
-    if np.isnan(driver_avg_pit_time):
-        driver_avg_pit_time = pit_stops_df["milliseconds"].median()
-
-    # Fetch driver-specific grid position
-    grid_position = results_df[
-        (results_df["driverId"] == driver_id) & (results_df["circuitId"] == circuit_id)
-    ]["grid"].mean()
-
-    if np.isnan(grid_position):
-        grid_position = results_df["grid"].median()
-
-    # ✅ Create input data with matching features
-    input_data = pd.DataFrame([[grid_position, driver_avg_lap_time, driver_avg_pit_time, driver_avg_qualifying_time]],
-                              columns=["grid_position", "avg_lap_time", "avg_pit_time", "avg_qualifying_time"])
-
-    # Transform input data
+    # Normalize input data
     input_data_scaled = scaler.transform(input_data)
 
     # Predict race position
     predicted_position = model.predict(input_data_scaled)[0][0] * 20
-    if np.isnan(predicted_position):
-        print("⚠️ Model returned NaN. Assigning default position (10).")
-        predicted_position = 10
-
     predicted_position = max(1, min(round(predicted_position), 20))
 
-    # Ensure the predicted result is within range and corresponding team information is updated
+    # Final result
     result = {
         "driver_id": driver_id,
         "driver": driver_name,
