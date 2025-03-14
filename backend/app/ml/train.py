@@ -64,10 +64,13 @@ print("\n🛠️ Checking for NaN or infinite values:")
 print(merged_df.isna().sum())
 print(merged_df.isin([np.inf, -np.inf]).sum())
 
-# ✅ Fill missing values and replace infinite values
+# Fill NaN values with the median of each column
 numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
 merged_df[numeric_cols] = merged_df[numeric_cols].fillna(merged_df[numeric_cols].median())
-merged_df[numeric_cols] = merged_df[numeric_cols].replace([np.inf, -np.inf], np.nan).fillna(merged_df[numeric_cols].median())
+
+# Double-check that all NaN values are removed
+print("✅ NaN values after filling:", merged_df.isna().sum().sum())  # Should be 0
+
 
 # ✅ Select features for training
 features = [
@@ -105,7 +108,7 @@ model = XGBRegressor(
 model.fit(
     X_train, y_train,
     eval_set=[(X_test, y_test)],
-    eval_metric="rmse",  # Use RMSE for regression
+    evals_result={},
     verbose=True
 )
 
