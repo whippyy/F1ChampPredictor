@@ -19,7 +19,7 @@ pit_stops = data["pit_stops"]
 qualifying = data["qualifying"]
 constructors = data["constructors"]
 driver_standings = data["driver_standings"].copy()
-constructor_standings = data["constructor_standings"].copy()  # Fixed reference
+constructor_standings = data["standings"].copy()
 
 # ✅ Merge races first, with circuitId
 merged_df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
