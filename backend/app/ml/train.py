@@ -19,7 +19,7 @@ pit_stops = data["pit_stops"]
 qualifying = data["qualifying"]
 constructors = data["constructors"]
 driver_standings = data["driver_standings"].copy()
-constructor_standings = data["standings"].copy()
+constructor_standings = data["constructor_standings"].copy()  # Fixed reference
 
 # ✅ Merge races first, with circuitId
 merged_df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
@@ -28,11 +28,11 @@ merged_df = results.merge(races[["raceId", "circuitId"]], on="raceId", how="left
 merged_df = merged_df.merge(drivers, on="driverId", how="left")
 merged_df = merged_df.merge(circuits, on="circuitId", how="left")
 merged_df = merged_df.merge(constructors, on="constructorId", how="left")
-merged_df = merged_df.merge(
-    pit_stops.groupby("raceId").agg({'milliseconds': 'mean'}).rename(columns={'milliseconds': 'avg_pit_time'}),
-    on="raceId",
-    how="left"
-)
+
+# ✅ Compute average pit stop time per race
+pit_stop_avg = pit_stops.groupby("raceId")["milliseconds"].mean().reset_index()
+pit_stop_avg.rename(columns={"milliseconds": "avg_pit_time"}, inplace=True)
+merged_df = merged_df.merge(pit_stop_avg, on="raceId", how="left")
 
 # ✅ Compute track-specific average lap time
 lap_times = lap_times.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
@@ -42,8 +42,10 @@ merged_df = merged_df.merge(avg_lap_time, on=["driverId", "circuitId"], how="lef
 
 # ✅ Compute average qualifying time
 qualifying = qualifying.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
+
 for col in ["q1", "q2", "q3"]:
     qualifying[col] = pd.to_numeric(qualifying[col], errors="coerce")
+
 qualifying["avg_qualifying_time"] = qualifying[["q1", "q2", "q3"]].mean(axis=1)
 qualifying_avg = qualifying.groupby(["driverId", "circuitId"])["avg_qualifying_time"].mean().reset_index()
 merged_df = merged_df.merge(qualifying_avg, on=["driverId", "circuitId"], how="left")
@@ -72,7 +74,13 @@ features = [
     "grid", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
     "driver_points", "driver_position", "constructor_points", "constructor_position"
 ]
-y = merged_df["positionOrder"] / 20.0  # Normalize target (assuming 20 positions)
+
+# Ensure target column exists and normalize by max position count
+if "positionOrder" in merged_df.columns:
+    y = merged_df["positionOrder"] / merged_df["positionOrder"].max()  # Dynamic normalization
+else:
+    raise ValueError("Column 'positionOrder' not found in dataset.")
+
 X = merged_df[features]
 
 # ✅ Normalize numeric features
