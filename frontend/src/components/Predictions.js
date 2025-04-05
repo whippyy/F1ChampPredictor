@@ -1,122 +1,116 @@
 import React, { useState, useEffect } from "react";
 import "./Predictions.css";
 
-const teamColors = {
-  Mercedes: "#00D2BE",
-  RedBull: "#1E41FF",
-  Ferrari: "#DC0000",
-  McLaren: "#FF8700",
-  AstonMartin: "#006F62",
-  Alpine: "#0090FF",
-  Haas: "#FFFFFF",
-  AlphaTauri: "#2B4562",
-  AlfaRomeo: "#900000",
-  Williams: "#005AFF",
-};
-
-const driverImages = (driverCode) => driverCode ? `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_1320/fom-website/drivers/2024Drivers/${driverCode}` : "https://via.placeholder.com/80";
-const teamLogos = (teamCode) => teamCode ? `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_1320/fom-website/teams/2024Teams/${teamCode}` : "https://via.placeholder.com/50";
-
 const Prediction = () => {
-  const [races, setRaces] = useState([]);
-  const [selectedRace, setSelectedRace] = useState("");
-  const [predictions, setPredictions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [prediction, setPrediction] = useState([]);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/races?season=2024")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Fetched races:", data);
-        setRaces([...data.data]);
-      })
-      .catch((err) => console.error("Error fetching races:", err));
+    const fetchDrivers = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/drivers?with_images=true");
+        const data = await response.json();
+        setDrivers(data.data || []);
+      } catch (error) {
+        console.error("Error fetching drivers:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDrivers();
   }, []);
 
-  const handleRaceChange = (e) => {
-    setSelectedRace(e.target.value);
-  };
-
-  const handlePredict = () => {
-    if (!selectedRace) {
-      setError("Please select a race first!");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    fetch("http://127.0.0.1:8000/predict-race", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ circuit_id: selectedRace }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Fetched predictions:", data);
-        setPredictions(data.predictions || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error predicting race:", err);
-        setError("Failed to fetch predictions.");
-        setLoading(false);
+  const handlePrediction = (position) => {
+    return (driverId) => {
+      setPrediction(prev => {
+        const newPrediction = [...prev];
+        newPrediction[position - 1] = driverId;
+        return newPrediction;
       });
+    };
   };
 
   return (
-    <div className="prediction-container">
-      <h1 className="title">🏁 Race Predictions</h1>
-
-      <select
-        value={selectedRace}
-        onChange={(e) => setSelectedRace(e.target.value)}
-        className="race-select"
-      >
-        <option value="">Select a Race</option>
-        {races.map((race) => (
-          <option key={race.raceId} value={race.circuitId}>
-            {race.name} ({race.year})
-          </option>
-        ))}
-      </select>
-
-      <button onClick={handlePredict} className="predict-btn" disabled={loading}>
-        {loading ? "Predicting..." : "Predict Race"}
-      </button>
-
-      {error && <p className="error-msg">{error}</p>}
-
-      <div className="predictions-list">
-        {predictions.length > 0 ? (
-          predictions.map((driver, index) => (
-            <div
-              key={driver.driver_id || index}
-              className="driver-card"
-              style={{ backgroundColor: teamColors[driver.team] || "#444" }}
-            >
-              <img src={driverImages(driver.driver_code)} alt={driver.name} className="driver-headshot" />
-              <div className="driver-info">
-                <h2>{driver.name}</h2>
-                <p>{driver.team}</p>
-              </div>
-              <div className="team-logo-container">
-                <span className="position-number">{index + 1}</span>
-                <img src={teamLogos(driver.team_code)} alt={driver.team} className="team-logo" />
+    <div className="prediction-container p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold text-center mb-8 text-white">🏆 Race Prediction</h1>
+      
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+        </div>
+      ) : (
+        <div className="w-full space-y-4">
+          {[1, 2, 3, 4, 5].map((position) => (
+            <div key={position} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h2 className="text-xl font-semibold mb-4 text-white">
+                {position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : `P${position}`} Position
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {drivers.map((driver) => (
+                  <div
+                    key={driver.driverId}
+                    onClick={() => handlePrediction(position)(driver.driverId)}
+                    className={`driver-card bg-gray-700 rounded-lg p-2 cursor-pointer transition-all ${
+                      prediction[position - 1] === driver.driverId ? 'ring-2 ring-red-500' : 'hover:bg-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className="relative">
+                        {driver.imageUrl ? (
+                          <img
+                            src={driver.imageUrl}
+                            alt={`${driver.forename} ${driver.surname}`}
+                            className="w-12 h-12 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '/driver-placeholder.png';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center">
+                            <span className="text-xs text-gray-400">No image</span>
+                          </div>
+                        )}
+                        {driver.teamLogo && (
+                          <img
+                            src={driver.teamLogo}
+                            alt={driver.team}
+                            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border border-gray-800"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '/team-placeholder.png';
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-semibold text-white">
+                          {driver.forename[0]}. {driver.surname}
+                        </h3>
+                        <p className="text-xs text-gray-300">{driver.team}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))
-        ) : (
-          !loading && <p className="no-predictions">No predictions available.</p>
-        )}
-      </div>
+          ))}
+          
+          <button
+            className="mt-6 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+            disabled={prediction.length < 5}
+          >
+            Submit Prediction
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Prediction;
-
 
 
 
