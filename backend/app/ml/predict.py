@@ -52,7 +52,7 @@ qualifying_df["avg_qualifying_time"] = qualifying_df[["q1", "q2", "q3"]].mean(ax
 numeric_columns = ["grid", "fastestLapSpeed", "avg_lap_time"]
 for col in numeric_columns:
     results_df[col] = pd.to_numeric(results_df[col], errors="coerce")
-    results_df[col].fillna(results_df[col].median(), inplace=True)
+    results_df[col] = results_df[col].fillna(results_df[col].median())
 
 def predict_race(driver_id: int, circuit_id: int, grid: int):
     """
