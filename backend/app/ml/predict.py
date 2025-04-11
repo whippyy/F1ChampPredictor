@@ -53,7 +53,7 @@ numeric_columns = ["grid", "fastestLapSpeed", "avg_lap_time"]
 for col in numeric_columns:
     results_df[col] = pd.to_numeric(results_df[col], errors="coerce")
     results_df[col] = results_df[col].fillna(results_df[col].median())
-    
+
 # In your predict.py, add these debug prints BEFORE the prediction:
 print("\n=== DEBUGGING INPUT DATA ===")
 print("Driver ID:", driver_id)
@@ -74,8 +74,20 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
     """
     Predicts the final race result using all the training features.
     """
-    if model is None or scaler is None:
-        raise ValueError("No trained model found! Please train the model first.")
+    
+    # 1. Verify model and scaler loaded properly
+    if model is None:
+        raise ValueError("Model failed to load!")
+    if scaler is None:
+        raise ValueError("Scaler failed to load!")
+
+    # 2. Verify feature names match exactly
+    required_features = [
+        "grid", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
+        "driver_points", "driver_position", "constructor_points", "constructor_position"
+    ]
+    assert all(feat in input_data.columns for feat in required_features), \
+        f"Missing features! Expected: {required_features}"
 
     # Fetch driver info
     driver_row = drivers_df[drivers_df["driverId"] == driver_id]
