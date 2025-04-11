@@ -77,8 +77,8 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     # Extract all features used for training
     feature_columns = [
-        "grid", "fastestLapSpeed", "avg_lap_time", "avg_pit_time", "avg_qualifying_time", "wins", 
-        "points", "constructor_standing", "driver_standing"
+        "grid", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
+        "driver_points", "driver_position", "constructor_points", "constructor_position"
     ]
 
     # Fetch race-specific features
@@ -109,8 +109,14 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
 
     # Construct feature vector
     input_data = pd.DataFrame([[
-        grid, fastest_lap_speed, avg_lap_time, avg_pit_time, avg_qualifying_time, wins, 
-        points, constructor_standing, driver_standing
+        grid, 
+        avg_lap_time, 
+        avg_pit_time, 
+        avg_qualifying_time,
+        points,  # driver_points
+        driver_standing,  # driver_position
+        constructor_standing,  # constructor_points
+        constructor_standing  # constructor_position (you may need to calculate this separately)
     ]], columns=feature_columns)
 
     # Normalize input data
