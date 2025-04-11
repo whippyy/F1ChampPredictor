@@ -53,6 +53,22 @@ numeric_columns = ["grid", "fastestLapSpeed", "avg_lap_time"]
 for col in numeric_columns:
     results_df[col] = pd.to_numeric(results_df[col], errors="coerce")
     results_df[col] = results_df[col].fillna(results_df[col].median())
+    
+# In your predict.py, add these debug prints BEFORE the prediction:
+print("\n=== DEBUGGING INPUT DATA ===")
+print("Driver ID:", driver_id)
+print("Circuit ID:", circuit_id)
+print("Raw input features:")
+print(input_data)
+
+# Add validation before prediction
+if input_data.isnull().values.any():
+    print("WARNING: NaN values detected in features:")
+    print(input_data.isnull().sum())
+    input_data = input_data.fillna(input_data.median())
+
+print("Final features being sent to model:")
+print(input_data)
 
 def predict_race(driver_id: int, circuit_id: int, grid: int):
     """
