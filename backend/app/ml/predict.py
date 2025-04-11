@@ -118,14 +118,34 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
         constructor_standing,  # constructor_points
         constructor_standing  # constructor_position (you may need to calculate this separately)
     ]], columns=feature_columns)
+    
+    if input_data.isnull().values.any():
+        print("⚠️ Warning: NaN values detected in input features:")
+        print(input_data.isnull().sum())
+        # Fill NaN with median values from training
+        input_data = input_data.fillna({
+            "grid": results_df["grid"].median(),
+            "avg_lap_time": results_df["avg_lap_time"].median(),
+            # ... fill other features similarly
+        })
 
+    # Verify again before prediction
+    if input_data.isnull().values.any():
+        raise ValueError("NaN values still present after filling!")
+    
     # Normalize input data
     input_data_scaled = scaler.transform(input_data)
 
     # Predict race position
     predicted_position = model.predict(input_data_scaled)[0][0] * 20
-    predicted_position = max(1, min(round(predicted_position), 20))
-
+    
+    # Add validation
+    if np.isnan(predicted_position):
+        print("⚠️ Model predicted NaN! Using median position as fallback")
+        predicted_position = 10  # Middle position as fallback
+    else:
+        predicted_position = max(1, min(round(predicted_position), 20))
+                                
     # Final result
     result = {
         "driver_id": driver_id,
