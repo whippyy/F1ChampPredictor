@@ -5,7 +5,11 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-from app.data_loader import load_csv_data
+try:
+    from app.data_loader import load_csv_data
+except ImportError:
+    from data_loader import load_csv_data 
+
 import joblib
 import os
 
@@ -26,6 +30,10 @@ def prepare_features(data):
     constructor_standings = data["standings"].copy()
     constructors = data["constructors"]
 
+    for df in [results, races, lap_times, pit_stops, qualifying]:
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        df.fillna(df.median(numeric_only=True), inplace=True)
+        
     # Merge base data
     merged_df = results.merge(races[["raceId", "circuitId", "year"]], on="raceId", how="left")
     merged_df = merged_df.merge(drivers, on="driverId", how="left")
@@ -76,7 +84,7 @@ def train_models():
     # Load and prepare data
     data = load_csv_data()
     df = prepare_features(data)
-    
+
     # Common features for both models
     base_features = [
         "grid", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
