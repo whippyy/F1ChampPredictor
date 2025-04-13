@@ -33,7 +33,7 @@ def prepare_features(data):
     for df in [results, races, lap_times, pit_stops, qualifying]:
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df.fillna(df.median(numeric_only=True), inplace=True)
-        
+
     # Merge base data
     merged_df = results.merge(races[["raceId", "circuitId", "year"]], on="raceId", how="left")
     merged_df = merged_df.merge(drivers, on="driverId", how="left")
@@ -80,10 +80,18 @@ def prepare_features(data):
 
     return merged_df
 
+
 def train_models():
     # Load and prepare data
     data = load_csv_data()
     df = prepare_features(data)
+    
+    if y.isnull().any() or np.isinf(y).any():
+        print("❌ Invalid values in labels!")
+        print("NaN count:", y.isnull().sum())
+        print("Inf count:", np.isinf(y).sum())
+    y = y.fillna(y.median())  # Fill NaN with median
+    y = y.replace([np.inf, -np.inf], y.median())  # Replace infinity
 
     # Common features for both models
     base_features = [
