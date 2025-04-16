@@ -48,69 +48,65 @@ def get_driver_stats(driver_id, circuit_id):
 
 
 @router.post("/predict-race")
+@router.post("/predict-race")
 def predict_entire_race(data: TrackPredictionRequest):
     """
     Predicts the entire race order for a given track.
     """
     circuit_id = data.circuit_id
 
-    # 🚨 Ensure circuit is valid for the current season
     if circuit_id not in valid_tracks:
         raise HTTPException(status_code=400, detail="Invalid circuit for current season")
 
     print(f"🚦 Predicting race for track {circuit_id}...")
 
-    # ✅ Fetch valid drivers for the season
     drivers_in_season = list(valid_drivers)
     raw_predictions = []
 
-    # ✅ Loop through all drivers and predict race position
     for driver_id in drivers_in_season:
-        # ✅ Fetch past grid position & lap time
         grid_position, avg_lap_time = get_driver_stats(driver_id, circuit_id)
 
-        # ✅ Predict race position
+        # Get prediction
         prediction = predict_race(
             driver_id=driver_id,
             circuit_id=circuit_id,
             grid=grid_position,
         )
 
-        raw_predictions.append((driver_id, prediction["predicted_race_position"], prediction))
+        # Skip failed predictions
+        if prediction.get("status") != "success":
+            continue
 
-    # ✅ Sort by race position
+        raw_predictions.append((
+            driver_id, 
+            prediction["predicted_race_position"], 
+            prediction
+        ))
+
+    # Sort by predicted position
     raw_predictions.sort(key=lambda x: x[1])
 
-    # ✅ Assign unique positions starting from 1
-    for i, (_, _, prediction) in enumerate(raw_predictions):
-        prediction["predicted_race_position"] = i + 1
-
-    # ✅ Gather results with driver and team info
+    # Assign final positions (in case of ties or missing predictions)
     predictions = []
-    for _, _, prediction in raw_predictions:
-        # Fetch driver info
-        driver_row = drivers_df[drivers_df["driverId"] == prediction["driver_id"]]
-        driver_name = f"{driver_row['forename'].values[0]} {driver_row['surname'].values[0]}" if not driver_row.empty else "Unknown Driver"
-        driver_code = driver_row["code"].values[0] if "code" in driver_row.columns and not driver_row.empty else None
+    for position, (driver_id, _, pred) in enumerate(raw_predictions, start=1):
+        driver_row = drivers_df[drivers_df["driverId"] == driver_id].iloc[0]
+        team_id = results_df[
+            (results_df["driverId"] == driver_id) & 
+            (results_df["raceId"].isin(current_races["raceId"]))
+        ]["constructorId"].values[0]
+        team_row = constructors_df[constructors_df["constructorId"] == team_id].iloc[0]
 
-        # Fetch team info
-        team_id = results_df[results_df["driverId"] == prediction["driver_id"]]["constructorId"].values[0]
-        team_row = constructors_df[constructors_df["constructorId"] == team_id]
-        team_name = team_row["name"].values[0] if team_row is not None and not team_row.empty else "Unknown Team"
-        team_code = team_row["constructorRef"].values[0] if team_row is not None and "constructorRef" in team_row.columns else None
-
-        prediction.update({
-            "driver": driver_name,
-            "driver_code": driver_code,
-            "team": team_name,
-            "team_code": team_code,
-            "track": prediction["track"]
+        predictions.append({
+            "position": position,
+            "driver_id": driver_id,
+            "driver": f"{driver_row['forename']} {driver_row['surname']}",
+            "driver_code": driver_row.get("code", ""),
+            "team": team_row["name"],
+            "team_code": team_row.get("constructorRef", ""),
+            "track": pred["track"]
         })
 
-        predictions.append(prediction)
-
     return {
-        "track": predictions[0]["track"],
+        "track": predictions[0]["track"] if predictions else "Unknown",
         "predictions": predictions
     }
-
