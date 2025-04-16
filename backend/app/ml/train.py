@@ -81,6 +81,14 @@ def prepare_features(data):
 def train_models():
     # Load and prepare data
     data = load_csv_data()
+
+    print("\n=== DATA QUALITY REPORT ===")
+    for name, df in data.items():
+        print(f"\n{name}:")
+        print(f"Shape: {df.shape}")
+        print(f"NaN count: {df.isna().sum().sum()}")
+        print(f"Inf count: {np.isinf(df.select_dtypes(include=np.number)).sum().sum()}")
+
     df = prepare_features(data)
     
     # Common features for both models
@@ -129,7 +137,7 @@ def train_models():
         
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
+
         # Scale features
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
