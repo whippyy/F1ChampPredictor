@@ -68,8 +68,14 @@ def prepare_features(data):
 
     # Handle missing values
     numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
-    merged_df[numeric_cols] = merged_df[numeric_cols].fillna(merged_df[numeric_cols].median())
-
+    for col in numeric_cols:
+        # Replace inf/-inf with NaN first
+        merged_df[col] = merged_df[col].replace([np.inf, -np.inf], np.nan)
+        # Fill remaining NaN with column median
+        merged_df[col] = merged_df[col].fillna(merged_df[col].median())
+        # If still NaN (all values were NaN), fill with 0
+        merged_df[col] = merged_df[col].fillna(0)
+    
     return merged_df
 
 def train_models():
@@ -107,9 +113,19 @@ def train_models():
         y_race = y_race.fillna(y_race.median())
         y_race = y_race.replace([np.inf, -np.inf], y_race.median())
     
-    # Train both models
     for model_type, X, y in [("qual", X_qual, y_qual), ("race", X_race, y_race)]:
         print(f"\nTraining {model_type} model...")
+        
+        # Validate labels
+        print(f"Label stats before cleaning: min={y.min()}, max={y.max()}, NaN={y.isna().sum()}, Inf={(y == np.inf).sum()}")
+        
+        y = y.replace([np.inf, -np.inf], np.nan)
+        y = y.fillna(y.median())
+        
+        # If all values are bad, use default (0.5 for normalized target)
+        if len(y.unique()) == 1 or y.isna().any():
+            y = pd.Series([0.5]*len(y), index=y.index)
+            print("⚠️ Used fallback labels due to data issues")
         
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
