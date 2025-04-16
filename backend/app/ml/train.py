@@ -5,11 +5,7 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-try:
-    from app.data_loader import load_csv_data
-except ImportError:
-    from data_loader import load_csv_data 
-
+from app.data_loader import load_csv_data
 import joblib
 import os
 
@@ -29,10 +25,6 @@ def prepare_features(data):
     driver_standings = data["driver_standings"].copy()
     constructor_standings = data["standings"].copy()
     constructors = data["constructors"]
-
-    for df in [results, races, lap_times, pit_stops, qualifying]:
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        df.fillna(df.median(numeric_only=True), inplace=True)
 
     # Merge base data
     merged_df = results.merge(races[["raceId", "circuitId", "year"]], on="raceId", how="left")
@@ -80,19 +72,11 @@ def prepare_features(data):
 
     return merged_df
 
-
 def train_models():
     # Load and prepare data
     data = load_csv_data()
     df = prepare_features(data)
     
-    if y.isnull().any() or np.isinf(y).any():
-        print("❌ Invalid values in labels!")
-        print("NaN count:", y.isnull().sum())
-        print("Inf count:", np.isinf(y).sum())
-    y = y.fillna(y.median())  # Fill NaN with median
-    y = y.replace([np.inf, -np.inf], y.median())  # Replace infinity
-
     # Common features for both models
     base_features = [
         "grid", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
@@ -105,11 +89,23 @@ def train_models():
     X_qual = df[qual_features]
     y_qual = df["qualifying_position"] / df["qualifying_position"].max()
     
+    # Check for invalid values in labels
+    if y_qual.isnull().any() or np.isinf(y_qual).any():
+        print("Found invalid values in qualifying labels. Fixing...")
+        y_qual = y_qual.fillna(y_qual.median())
+        y_qual = y_qual.replace([np.inf, -np.inf], y_qual.median())
+    
     # Train race position model
     print("\n=== TRAINING RACE POSITION MODEL ===")
     race_features = base_features + ["qualifying_position"]
     X_race = df[race_features]
     y_race = df["positionOrder"] / df["positionOrder"].max()
+    
+    # Check for invalid values in labels
+    if y_race.isnull().any() or np.isinf(y_race).any():
+        print("Found invalid values in race labels. Fixing...")
+        y_race = y_race.fillna(y_race.median())
+        y_race = y_race.replace([np.inf, -np.inf], y_race.median())
     
     # Train both models
     for model_type, X, y in [("qual", X_qual, y_qual), ("race", X_race, y_race)]:
@@ -125,9 +121,9 @@ def train_models():
         
         # Train model
         model = XGBRegressor(
-            n_estimators=200,
+            n_estimators=100,  # Reduced for faster testing
             learning_rate=0.05,
-            max_depth=6,
+            max_depth=4,  # Reduced for faster testing
             subsample=0.8,
             colsample_bytree=0.8,
             random_state=42
