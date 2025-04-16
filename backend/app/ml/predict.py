@@ -84,17 +84,17 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
         input_data_scaled = scaler.transform(input_data)
         
         # Make prediction
-        prediction = model.predict(input_data_scaled)[0][0]
+        prediction = model.predict(input_data_scaled)[0]
         predicted_position = max(1, min(round(prediction * 20), 20))
         
-        # Prepare result
+        # Prepare result - MATCH WHAT predictions.py EXPECTS
         driver_info = drivers_df[drivers_df["driverId"] == driver_id].iloc[0]
         circuit_info = circuits_df[circuits_df["circuitId"] == circuit_id].iloc[0]
         
         return {
-            "driver": f"{driver_info['forename']} {driver_info['surname']}",
+            "driver_id": driver_id,  # Add this
+            "predicted_race_position": predicted_position,  # Changed key name
             "track": circuit_info["name"],
-            "predicted_position": predicted_position,
             "status": "success"
         }
         
