@@ -6,6 +6,10 @@ Predict Qualifying Position
     Currently using the same model that was use to predict the sunday races. 
     Currently not working right now. Might have to look into training its own model to be inputed into prediction model to keep it separate.
 
+
+//^^^
+Qual prdictions are now made with the same model for easier usage, prdictions now work, need to pull info on the drivers on who the id corresponds to
+
 Carry Over Points for Championship Standings
 
     Maintain a cumulative points table that updates after each predicted race.
@@ -23,6 +27,7 @@ Retrain model to take in all of the data
 
 Issues:
     predictions are all the same order across races
+
 
 
 
