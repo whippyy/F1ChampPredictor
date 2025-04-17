@@ -45,7 +45,7 @@ def get_driver_stats(driver_id: int, circuit_id: int):
     }
     return stats
 
-def predict_race(driver_id: int, race_id: int, grid: int):
+def predict_race(driver_id: int, circuit_id: int, grid: int):
     """Main prediction function"""
     try:
         # Input validation
