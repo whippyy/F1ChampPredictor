@@ -89,14 +89,17 @@ def predict_race(driver_id: int, circuit_id: int, grid: int):
         
         # Prepare result - MATCH WHAT predictions.py EXPECTS
         driver_info = drivers_df[drivers_df["driverId"] == driver_id].iloc[0]
+        driver_name = f"{driver_info['forename']} {driver_info['surname']}"
         circuit_info = circuits_df[circuits_df["circuitId"] == circuit_id].iloc[0]
         
-        return {
-            "driver_id": driver_id,  # Add this
-            "predicted_race_position": predicted_position,  # Changed key name
-            "track": circuit_info["name"],
-            "status": "success"
-        }
+    return {
+        "driver_id": driver_id,
+        "driver_name": driver_name,
+        "predicted_race_position": predicted_position,
+        "track": circuit_info["name"],
+        "status": "success"
+    }
+
         
     except Exception as e:
         return {
