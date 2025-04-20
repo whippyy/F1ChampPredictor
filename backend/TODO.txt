@@ -27,6 +27,7 @@ Retrain model to take in all of the data
 
 Issues:
     predictions are all the same order across races
+    ^ still the same
 
 
 
