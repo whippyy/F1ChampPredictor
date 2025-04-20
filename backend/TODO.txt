@@ -24,11 +24,13 @@ Remove Circuits endpoint
     No use for it if there is a race endpoint that fetches all of the races in order for an inputed year
 
 Retrain model to take in all of the data
+model was trained on new data
 
 Issues:
     predictions are all the same order across races
     frontend is messed up with loading imagaes
     api calls require the fastapi to be up and running in order for the front end to work
+    
 
 
 
