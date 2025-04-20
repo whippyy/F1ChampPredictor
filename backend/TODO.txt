@@ -28,6 +28,7 @@ Retrain model to take in all of the data
 Issues:
     predictions are all the same order across races
     frontend is messed up with loading imagaes
+    api calls require the fastapi to be up and running in order for the front end to work
 
 
 
