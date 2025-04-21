@@ -39,7 +39,7 @@ def validate_data(data):
             raise ValueError(f"Table {table} missing columns: {missing}")
         
 def prepare_features(data):
-    """Prepare features with track-specific characteristics"""
+    """Prepare features focusing on driver-circuit performance history"""
     print("🟡 Preparing features...")
     
     # Load all data files
@@ -54,121 +54,155 @@ def prepare_features(data):
     constructor_standings = data["standings"]
     constructors = data["constructors"]
 
-    # Add default values for missing circuit characteristics
-    circuits['length'] = circuits.get('length', 5000)  # Default circuit length
-    circuits['corners'] = circuits.get('corners', 12)  # Default number of corners
-    circuits['altitude'] = circuits.get('altitude', 200)  # Default altitude
-
-    # First create a races_with_circuits dataframe
-    races_with_circuits = races.merge(
-        circuits[['circuitId', 'length', 'corners', 'altitude']],
-        on='circuitId',
-        how='left'
-    )
-
-    # Prepare lap time statistics by joining with race/circuit info first
-    lap_times_with_circuit = lap_times.merge(
-        races_with_circuits[['raceId', 'circuitId']],
-        on='raceId',
-        how='left'
-    )
-    track_lap_stats = lap_times_with_circuit.groupby('circuitId')['milliseconds'].agg(['mean', 'std']).reset_index()
-    track_lap_stats.columns = ['circuitId', 'track_avg_lap', 'track_std_lap']
-
-    # Prepare pit stop statistics
-    pit_stops_with_circuit = pit_stops.merge(
-        races_with_circuits[['raceId', 'circuitId']],
-        on='raceId',
-        how='left'
-    )
-    track_pit_stats = pit_stops_with_circuit.groupby('circuitId')['milliseconds'].mean().reset_index()
-    track_pit_stats.columns = ['circuitId', 'track_avg_pit']
-
-    # Create base merged dataframe
-    merged_df = (
+    # Create base dataframe with race and circuit info
+    races_with_circuits = races[['raceId', 'circuitId', 'year', 'round']]
+    
+    # 1. Driver's historical performance at each circuit
+    driver_circuit_history = (
         results
-        .merge(races_with_circuits, on='raceId', how='left')
-        .merge(drivers, on='driverId', how='left')
-        .merge(constructors, on='constructorId', how='left')
-        .merge(track_lap_stats, on='circuitId', how='left')
-        .merge(track_pit_stats, on='circuitId', how='left')
-    )
-
-    # Calculate driver's historical performance at each track
-    driver_history = (
-        results
-        .merge(races[['raceId', 'circuitId']], on='raceId')
+        .merge(races_with_circuits, on='raceId')
         .groupby(['driverId', 'circuitId'])
         .agg(
-            driver_track_avg=('positionOrder', 'mean'),
-            driver_track_best=('positionOrder', 'min'),
-            driver_track_races=('positionOrder', 'count')
+            driver_circuit_races=('raceId', 'count'),
+            driver_circuit_avg_finish=('positionOrder', 'mean'),
+            driver_circuit_best_finish=('positionOrder', 'min'),
+            driver_circuit_top3_rate=('positionOrder', lambda x: (x <= 3).mean()),
+            driver_circuit_avg_points=('points', 'mean')
         )
         .reset_index()
     )
-    merged_df = merged_df.merge(driver_history, on=['driverId', 'circuitId'], how='left')
-
-    # Calculate relative performance metrics
-    merged_df['lap_time_ratio'] = (
-        merged_df.groupby(['raceId', 'driverId'])['milliseconds'].transform('mean') / 
-        merged_df['track_avg_lap'])
-    merged_df['pit_time_ratio'] = (
-        merged_df.groupby(['raceId', 'driverId'])['milliseconds'].transform('mean') / 
-        merged_df['track_avg_pit'])
-
-    # Handle qualifying data
-    qualifying = qualifying.merge(races[['raceId', 'circuitId']], on='raceId')
-    for col in ['q1', 'q2', 'q3']:
-        qualifying[col] = pd.to_numeric(qualifying[col], errors='coerce')
-    qualifying['avg_qualifying_time'] = qualifying[['q1', 'q2', 'q3']].mean(axis=1)
-    qualifying = qualifying.merge(track_lap_stats, on='circuitId')
-    qualifying['quali_time_ratio'] = qualifying['avg_qualifying_time'] / qualifying['track_avg_lap']
-    merged_df = merged_df.merge(
-        qualifying[['raceId', 'driverId', 'quali_time_ratio']],
-        on=['raceId', 'driverId'],
-        how='left'
+    
+    # 2. Current race performance metrics
+    merged_df = (
+        results
+        .merge(races_with_circuits, on='raceId')
+        .merge(drivers, on='driverId')
+        .merge(constructors, on='constructorId')
     )
-
-    # Add standings data
-    merged_df = merged_df.merge(
-        driver_standings.rename(columns={
-            'points': 'driver_points',
-            'position': 'driver_position'
-        }),
-        on=['raceId', 'driverId'],
-        how='left'
+    
+    # 3. Qualifying performance (relative to others in same race)
+    qualifying_perf = (
+        qualifying
+        .merge(races_with_circuits, on='raceId')
+        .groupby('raceId')
+        .apply(lambda x: x.assign(
+            quali_percentile=x['position'].rank(pct=True)
+        ))
+        [['raceId', 'driverId', 'quali_percentile']]
     )
-    merged_df = merged_df.merge(
-        constructor_standings.rename(columns={
-            'points': 'constructor_points',
-            'position': 'constructor_position'
-        }),
-        on=['raceId', 'constructorId'],
-        how='left'
+    
+    # 4. Recent form (last 5 races performance)
+    recent_form = (
+        results
+        .merge(races[['raceId', 'date']], on='raceId')
+        .sort_values(['driverId', 'date'])
+        .groupby('driverId')
+        .tail(5)
+        .groupby('driverId')
+        .agg(
+            recent_avg_finish=('positionOrder', 'mean'),
+            recent_avg_points=('points', 'mean')
+        )
+        .reset_index()
     )
-
+    
+    # Combine all features
+    final_df = (
+        merged_df
+        .merge(driver_circuit_history, on=['driverId', 'circuitId'], how='left')
+        .merge(qualifying_perf, on=['raceId', 'driverId'], how='left')
+        .merge(recent_form, on='driverId', how='left')
+        .merge(driver_standings, on=['raceId', 'driverId'], how='left')
+        .merge(constructor_standings, on=['raceId', 'constructorId'], how='left')
+    )
+    
+    # Feature engineering
+    final_df['grid_to_quali_ratio'] = final_df['grid'] / (final_df['position'] + 1)
+    final_df['points_per_race'] = final_df['points'] / final_df['driver_circuit_races']
+    
     # Handle missing values
-    numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
-    for col in numeric_cols:
-        merged_df[col] = merged_df[col].replace([np.inf, -np.inf], np.nan)
-        if col.endswith('_ratio'):
-            merged_df[col] = merged_df[col].fillna(1.0)
-        elif 'track' in col:
-            if 'lap' in col:
-                merged_df[col] = merged_df[col].fillna(merged_df['milliseconds'].median())
-            elif 'pit' in col:
-                merged_df[col] = merged_df[col].fillna(pit_stops['milliseconds'].median())
-        elif 'driver_track' in col:
-            if 'avg' in col:
-                merged_df[col] = merged_df[col].fillna(10)
-            elif 'best' in col:
-                merged_df[col] = merged_df[col].fillna(20)
-            elif 'races' in col:
-                merged_df[col] = merged_df[col].fillna(0)
-        else:
-            merged_df[col] = merged_df[col].fillna(merged_df[col].median())
+    fill_values = {
+        'driver_circuit_races': 0,
+        'driver_circuit_avg_finish': 15,
+        'driver_circuit_best_finish': 20,
+        'driver_circuit_top3_rate': 0,
+        'driver_circuit_avg_points': 0,
+        'quali_percentile': 0.5,
+        'recent_avg_finish': 15,
+        'recent_avg_points': 0,
+        'grid_to_quali_ratio': 1,
+        'points_per_race': 0
+    }
+    final_df = final_df.fillna(fill_values)
+    
+    return final_df
 
-    return merged_df
+def train_models():
+    print("🟡 Starting model training...")
+    data = load_csv_data()
+    df = prepare_features(data)
+    
+    # Feature selection - focus on driver/circuit history and performance
+    race_features = [
+        'grid',
+        'quali_percentile',
+        'driver_circuit_races',
+        'driver_circuit_avg_finish',
+        'driver_circuit_best_finish',
+        'driver_circuit_top3_rate',
+        'driver_circuit_avg_points',
+        'recent_avg_finish',
+        'recent_avg_points',
+        'grid_to_quali_ratio',
+        'points_per_race',
+        'points',  # Current race points
+        'position'  # Current race position
+    ]
+    
+    X = df[race_features]
+    y = df['positionOrder']  # Actual finishing position
+    
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Scale features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # Train model
+    model = XGBRegressor(
+        objective='reg:squarederror',
+        n_estimators=150,
+        learning_rate=0.05,
+        max_depth=5,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42
+    )
+    
+    model.fit(
+        X_train_scaled,
+        y_train,
+        eval_set=[(X_test_scaled, y_test)],
+        early_stopping_rounds=20,
+        verbose=True
+    )
+    
+    # Evaluate
+    y_pred = model.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    mae = mean_absolute_error(y_test, y_pred)
+    
+    print(f"\n📊 Model Performance:")
+    print(f"🔹 RMSE: {rmse:.4f}")
+    print(f"🔹 MAE: {mae:.4f}")
+    
+    # Save model
+    joblib.dump(model, "app/ml/f1_driver_model.pkl")
+    joblib.dump(scaler, "app/ml/f1_scaler.pkl")
+    
+    print("\n✅ Model trained and saved successfully!")
 
 def train_models():
     print("🟡 Starting model training...")
