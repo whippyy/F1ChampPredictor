@@ -8,6 +8,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from app.data_loader import load_csv_data
 import joblib
 import os
+
+from xgboost import plot_importance
+import matplotlib.pyplot as plt
 print("🟢 Training script started") 
 
 # Create ml directory if it doesn't exist
@@ -42,8 +45,6 @@ def prepare_features(data):
     print(f"🔹 Circuits columns: {data['circuits'].columns.tolist()}")
 
     # Add feature importance visualization at the end of train_models()
-    from xgboost import plot_importance
-    import matplotlib.pyplot as plt
 
     plt.figure(figsize=(10, 8))
     plot_importance(model, max_num_features=15)
