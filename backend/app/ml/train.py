@@ -8,12 +8,14 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from app.data_loader import load_csv_data
 import joblib
 import os
+print("🟢 Training script started") 
 
 # Create ml directory if it doesn't exist
 os.makedirs("app/ml", exist_ok=True)
 
 def prepare_features(data):
     """Prepare features with track-specific characteristics"""
+    print("🟡 Preparing features...")
     # Load all data files
     drivers = data["drivers"]
     results = data["results"]
@@ -106,6 +108,7 @@ def prepare_features(data):
 
 def train_models():
     # Load and prepare data
+    print("🟡 Starting model training...")
     data = load_csv_data()
     df = prepare_features(data)
     
@@ -172,3 +175,8 @@ def train_models():
     joblib.dump(model, "app/ml/f1_xgb_model.pkl")
     
     print("\n✅ Enhanced model trained and saved successfully!")
+
+if __name__ == "__main__":
+    print("🔴 Main block executing")  # Add this before train_models()
+    train_models()
+    print("✅ Training completed successfully")  # Add this at the end
