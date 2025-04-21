@@ -55,11 +55,11 @@ def prepare_features(data):
     constructors = data["constructors"]
 
     # Create base dataframe with race and circuit info
-    races_with_circuits = races[['raceId', 'circuitId', 'year', 'round']]
+    races_with_circuits = races[['raceId', 'circuitId', 'year', 'round']].copy()
     
     # 1. Driver's historical performance at each circuit
     driver_circuit_history = (
-        results
+        results[['raceId', 'driverId', 'positionOrder', 'points']]
         .merge(races_with_circuits, on='raceId')
         .groupby(['driverId', 'circuitId'])
         .agg(
@@ -74,26 +74,26 @@ def prepare_features(data):
     
     # 2. Current race performance metrics
     merged_df = (
-        results
+        results[['raceId', 'driverId', 'constructorId', 'grid', 'position', 'positionOrder', 'points']]
         .merge(races_with_circuits, on='raceId')
-        .merge(drivers, on='driverId')
-        .merge(constructors, on='constructorId')
+        .merge(drivers[['driverId']], on='driverId')
+        .merge(constructors[['constructorId']], on='constructorId')
     )
     
     # 3. Qualifying performance (relative to others in same race)
     qualifying_perf = (
-        qualifying
-        .merge(races_with_circuits, on='raceId')
+        qualifying[['raceId', 'driverId', 'position']]
         .groupby('raceId')
         .apply(lambda x: x.assign(
             quali_percentile=x['position'].rank(pct=True)
         ))
+        .reset_index(drop=True)
         [['raceId', 'driverId', 'quali_percentile']]
     )
     
     # 4. Recent form (last 5 races performance)
     recent_form = (
-        results
+        results[['raceId', 'driverId', 'positionOrder', 'points']]
         .merge(races[['raceId', 'date']], on='raceId')
         .sort_values(['driverId', 'date'])
         .groupby('driverId')
@@ -106,19 +106,23 @@ def prepare_features(data):
         .reset_index()
     )
     
-    # Combine all features
+    # 5. Combine all features
     final_df = (
         merged_df
         .merge(driver_circuit_history, on=['driverId', 'circuitId'], how='left')
         .merge(qualifying_perf, on=['raceId', 'driverId'], how='left')
         .merge(recent_form, on='driverId', how='left')
-        .merge(driver_standings, on=['raceId', 'driverId'], how='left')
-        .merge(constructor_standings, on=['raceId', 'constructorId'], how='left')
+        .merge(driver_standings[['raceId', 'driverId', 'points', 'position']]
+               .rename(columns={'points': 'current_points', 'position': 'current_standing'}),
+               on=['raceId', 'driverId'], how='left')
+        .merge(constructor_standings[['raceId', 'constructorId', 'points', 'position']]
+               .rename(columns={'points': 'constructor_points', 'position': 'constructor_standing'}),
+               on=['raceId', 'constructorId'], how='left')
     )
     
     # Feature engineering
     final_df['grid_to_quali_ratio'] = final_df['grid'] / (final_df['position'] + 1)
-    final_df['points_per_race'] = final_df['points'] / final_df['driver_circuit_races']
+    final_df['points_per_race'] = final_df['points'] / final_df['driver_circuit_races'].replace(0, 1)
     
     # Handle missing values
     fill_values = {
@@ -131,7 +135,11 @@ def prepare_features(data):
         'recent_avg_finish': 15,
         'recent_avg_points': 0,
         'grid_to_quali_ratio': 1,
-        'points_per_race': 0
+        'points_per_race': 0,
+        'current_points': 0,
+        'current_standing': 20,
+        'constructor_points': 0,
+        'constructor_standing': 10
     }
     final_df = final_df.fillna(fill_values)
     
@@ -155,8 +163,10 @@ def train_models():
         'recent_avg_points',
         'grid_to_quali_ratio',
         'points_per_race',
-        'points',  # Current race points
-        'position'  # Current race position
+        'current_points',
+        'current_standing',
+        'constructor_points',
+        'constructor_standing'
     ]
     
     X = df[race_features]
@@ -203,84 +213,6 @@ def train_models():
     joblib.dump(scaler, "app/ml/f1_scaler.pkl")
     
     print("\n✅ Model trained and saved successfully!")
-
-def train_models():
-    print("🟡 Starting model training...")
-    data = load_csv_data()
-    validate_data(data)
-    df = prepare_features(data)
-    
-    # Enhanced feature set
-    race_features = [
-        "grid",
-        "lap_time_ratio",
-        "pit_time_ratio",
-        "quali_time_ratio",
-        "driver_points",
-        "driver_position",
-        "constructor_points",
-        "constructor_position",
-        "circuit_length_norm",
-        "circuit_corners_norm",
-        "driver_track_avg",
-        "driver_track_best"
-    ]
-    
-    X = df[race_features]
-    y = df["positionOrder"] / df["positionOrder"].max()
-    
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Scale features
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    
-    # Train model
-    model = XGBRegressor(
-        n_estimators=200,
-        learning_rate=0.03,
-        max_depth=6,
-        subsample=0.9,
-        colsample_bytree=0.9,
-        min_child_weight=3,
-        reg_alpha=0.1,
-        reg_lambda=1.0,
-        random_state=42,
-        eval_metric='mae'
-    )
-    
-    model.fit(
-        X_train_scaled, 
-        y_train, 
-        eval_set=[(X_test_scaled, y_test)],
-        early_stopping_rounds=20,
-        verbose=True
-    )
-    
-    # Evaluate
-    y_pred = model.predict(X_test_scaled)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    mae = mean_absolute_error(y_test, y_pred)
-    
-    print(f"\n📊 Enhanced Race Model Performance:")
-    print(f"🔹 RMSE: {rmse:.4f}")
-    print(f"🔹 MAE: {mae:.4f}")
-    
-    # Save artifacts
-    joblib.dump(scaler, "app/ml/scaler.pkl")
-    joblib.dump(model, "app/ml/f1_xgb_model.pkl")
-    
-    # Feature importance visualization
-    plt.figure(figsize=(10, 8))
-    plot_importance(model, max_num_features=15)
-    plt.title("Feature Importance")
-    plt.tight_layout()
-    plt.savefig("app/ml/feature_importance.png")
-    print("📊 Feature importance plot saved to app/ml/feature_importance.png")
-    
-    print("\n✅ Enhanced model trained and saved successfully!")
 
 if __name__ == "__main__":
     print("🔴 Main block executing")
