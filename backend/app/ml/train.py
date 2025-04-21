@@ -12,7 +12,28 @@ print("🟢 Training script started")
 
 # Create ml directory if it doesn't exist
 os.makedirs("app/ml", exist_ok=True)
-
+def validate_data(data):
+    """Validate that all required data is present"""
+    required_tables = {
+        'drivers': ['driverId'],
+        'results': ['raceId', 'driverId', 'constructorId', 'grid', 'positionOrder'],
+        'races': ['raceId', 'circuitId', 'year', 'round'],
+        'circuits': ['circuitId', 'name'],
+        'lap_times': ['raceId', 'driverId', 'milliseconds'],
+        'pit_stops': ['raceId', 'driverId', 'milliseconds'],
+        'qualifying': ['raceId', 'driverId', 'q1', 'q2', 'q3'],
+        'driver_standings': ['raceId', 'driverId', 'points', 'position'],
+        'standings': ['raceId', 'constructorId', 'points', 'position'],
+        'constructors': ['constructorId']
+    }
+    
+    for table, cols in required_tables.items():
+        if table not in data:
+            raise ValueError(f"Missing required table: {table}")
+        missing = set(cols) - set(data[table].columns)
+        if missing:
+            raise ValueError(f"Table {table} missing columns: {missing}")
+        
 def prepare_features(data):
     """Prepare features with track-specific characteristics"""
     print("🟡 Preparing features...")
