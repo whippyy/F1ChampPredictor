@@ -8,13 +8,14 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from app.data_loader import load_csv_data
 import joblib
 import os
-
 from xgboost import plot_importance
 import matplotlib.pyplot as plt
+
 print("🟢 Training script started") 
 
 # Create ml directory if it doesn't exist
 os.makedirs("app/ml", exist_ok=True)
+
 def validate_data(data):
     """Validate that all required data is present"""
     required_tables = {
@@ -39,21 +40,15 @@ def validate_data(data):
         
 def prepare_features(data):
     """Prepare features with track-specific characteristics"""
-    # Add these at the top of prepare_features() to inspect data shapes
+    print("🟡 Preparing features...")
+    
+    # Data inspection
     print(f"🔹 Results shape: {data['results'].shape}")
     print(f"🔹 Circuits shape: {data['circuits'].shape}")
     print(f"🔹 Circuits columns: {data['circuits'].columns.tolist()}")
-
-    # Add feature importance visualization at the end of train_models()
-
-    plt.figure(figsize=(10, 8))
-    plot_importance(model, max_num_features=15)
-    plt.title("Feature Importance")
-    plt.tight_layout()
-    plt.savefig("app/ml/feature_importance.png")
-    print("📊 Feature importance plot saved to app/ml/feature_importance.png")
-
-    print("🟡 Preparing features...")
+    print("\n=== DATA SNAPSHOT ===")
+    print("Circuits sample:")
+    print(data['circuits'][['circuitId', 'name']].head(3))
     
     # Load all data files
     drivers = data["drivers"]
@@ -67,14 +62,9 @@ def prepare_features(data):
     constructor_standings = data["standings"].copy()
     constructors = data["constructors"]
 
-    # Add this after loading data
-    print("\n=== DATA SNAPSHOT ===")
-    print("Circuits sample:")
-    print(data['circuits'][['circuitId', 'name', 'length', 'corners']].head(3))
-
     # Verify required circuit columns exist
     circuit_columns = circuits.columns
-    required_circuit_cols = {'circuitId', 'name'}  # Minimal required columns
+    required_circuit_cols = {'circuitId', 'name'}
     missing_cols = required_circuit_cols - set(circuit_columns)
     
     if missing_cols:
@@ -83,12 +73,12 @@ def prepare_features(data):
     # Add default values for optional circuit characteristics
     if 'length' not in circuits.columns:
         print("⚠️ 'length' column not found in circuits, using default values")
-        circuits['length'] = 5000  # Default circuit length in meters
+        circuits['length'] = 5000
     if 'corners' not in circuits.columns:
         print("⚠️ 'corners' column not found in circuits, using default values")
-        circuits['corners'] = 12  # Default number of corners
+        circuits['corners'] = 12
     if 'altitude' not in circuits.columns:
-        circuits['altitude'] = 200  # Default altitude in meters
+        circuits['altitude'] = 200
 
     # Merge base data
     merged_df = results.merge(races[["raceId", "circuitId", "year", "round"]], on="raceId", how="left")
@@ -100,7 +90,7 @@ def prepare_features(data):
     merged_df["circuit_length_norm"] = merged_df["length"] / merged_df["length"].max()
     merged_df["circuit_corners_norm"] = merged_df["corners"] / merged_df["corners"].max()
     
-    # 2. Track average performance metrics
+    # Track average performance metrics
     track_lap_stats = lap_times.groupby("circuitId")["milliseconds"].agg(["mean", "std"]).reset_index()
     track_lap_stats.columns = ["circuitId", "track_avg_lap", "track_std_lap"]
     merged_df = merged_df.merge(track_lap_stats, on="circuitId", how="left")
@@ -109,20 +99,17 @@ def prepare_features(data):
     track_pit_stats.columns = ["circuitId", "track_avg_pit"]
     merged_df = merged_df.merge(track_pit_stats, on="circuitId", how="left")
     
-    # 3. Driver's historical performance at this track
+    # Driver's historical performance at this track
     driver_track_history = results.merge(races[["raceId", "circuitId"]], on="raceId") \
         .groupby(["driverId", "circuitId"])["positionOrder"].agg(["mean", "min", "count"]).reset_index()
     driver_track_history.columns = ["driverId", "circuitId", "driver_track_avg", "driver_track_best", "driver_track_races"]
     merged_df = merged_df.merge(driver_track_history, on=["driverId", "circuitId"], how="left")
     
     # Calculate relative performance metrics
-    # Lap time relative to track average
     merged_df["lap_time_ratio"] = merged_df.groupby(["raceId", "driverId"])["milliseconds"].transform("mean") / merged_df["track_avg_lap"]
-    
-    # Pit time relative to track average
     merged_df["pit_time_ratio"] = merged_df.groupby(["raceId", "driverId"])["milliseconds"].transform("mean") / merged_df["track_avg_pit"]
     
-    # Qualifying performance relative to track
+    # Qualifying performance
     qualifying = qualifying.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
     for col in ["q1", "q2", "q3"]:
         qualifying[col] = pd.to_numeric(qualifying[col], errors="coerce")
@@ -144,37 +131,33 @@ def prepare_features(data):
     # Handle missing values
     numeric_cols = merged_df.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
-        # Replace inf/-inf with NaN first
         merged_df[col] = merged_df[col].replace([np.inf, -np.inf], np.nan)
-        # Fill remaining NaN with column median
         merged_df[col] = merged_df[col].fillna(merged_df[col].median())
-        # If still NaN (all values were NaN), fill with reasonable defaults
         if col.endswith("_ratio"):
-            merged_df[col] = merged_df[col].fillna(1.0)  # 1.0 means average performance
+            merged_df[col] = merged_df[col].fillna(1.0)
         elif "track" in col:
-            # For track averages, use overall averages
             if "lap" in col:
                 merged_df[col] = merged_df[col].fillna(merged_df["milliseconds"].median())
             elif "pit" in col:
                 merged_df[col] = merged_df[col].fillna(pit_stops["milliseconds"].median())
         elif "driver_track" in col:
             if "avg" in col:
-                merged_df[col] = merged_df[col].fillna(10)  # Midfield finish
+                merged_df[col] = merged_df[col].fillna(10)
             elif "best" in col:
-                merged_df[col] = merged_df[col].fillna(20)  # Worst possible
+                merged_df[col] = merged_df[col].fillna(20)
             elif "races" in col:
-                merged_df[col] = merged_df[col].fillna(0)   # Never raced here
+                merged_df[col] = merged_df[col].fillna(0)
     
-    # Add this at the end of prepare_features()
+    # Clean up
     del drivers, results, races, circuits, lap_times, pit_stops, qualifying
     del driver_standings, constructor_standings, constructors
     
     return merged_df
 
 def train_models():
-    # Load and prepare data
     print("🟡 Starting model training...")
     data = load_csv_data()
+    validate_data(data)
     df = prepare_features(data)
     
     # Enhanced feature set
@@ -194,7 +177,7 @@ def train_models():
     ]
     
     X = df[race_features]
-    y = df["positionOrder"] / df["positionOrder"].max()  # Normalize target
+    y = df["positionOrder"] / df["positionOrder"].max()
     
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -204,7 +187,7 @@ def train_models():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
     
-    # Train model with enhanced parameters
+    # Train model
     model = XGBRegressor(
         n_estimators=200,
         learning_rate=0.03,
@@ -239,9 +222,17 @@ def train_models():
     joblib.dump(scaler, "app/ml/scaler.pkl")
     joblib.dump(model, "app/ml/f1_xgb_model.pkl")
     
+    # Feature importance visualization
+    plt.figure(figsize=(10, 8))
+    plot_importance(model, max_num_features=15)
+    plt.title("Feature Importance")
+    plt.tight_layout()
+    plt.savefig("app/ml/feature_importance.png")
+    print("📊 Feature importance plot saved to app/ml/feature_importance.png")
+    
     print("\n✅ Enhanced model trained and saved successfully!")
 
 if __name__ == "__main__":
-    print("🔴 Main block executing")  # Add this before train_models()
+    print("🔴 Main block executing")
     train_models()
-    print("✅ Training completed successfully")  # Add this at the end
+    print("✅ Training completed successfully")
