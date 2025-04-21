@@ -71,9 +71,11 @@ def predict_race(*, driver_id: int, circuit_id: str, grid: int):
             q1 = pd.to_numeric(quali_row.iloc[0].get("q1", np.nan), errors="coerce")
             q2 = pd.to_numeric(quali_row.iloc[0].get("q2", np.nan), errors="coerce")
             q3 = pd.to_numeric(quali_row.iloc[0].get("q3", np.nan), errors="coerce")
-            avg_quali_time = np.nanmean([q1, q2, q3])
+            quali_times = [q for q in [q1, q2, q3] if not np.isnan(q)]
+            avg_quali_time = np.mean(quali_times) if quali_times else np.nan
         else:
             avg_quali_time = np.nan
+
 
         # Qualifying position
         quali_df_copy = qualifying_df.copy()
