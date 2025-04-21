@@ -13,7 +13,7 @@ import os
 os.makedirs("app/ml", exist_ok=True)
 
 def prepare_features(data):
-    """Prepare features for both qualifying and race predictions"""
+    """Prepare features with track-specific characteristics"""
     # Load all data files
     drivers = data["drivers"]
     results = data["results"]
@@ -27,34 +27,46 @@ def prepare_features(data):
     constructors = data["constructors"]
 
     # Merge base data
-    merged_df = results.merge(races[["raceId", "circuitId", "year"]], on="raceId", how="left")
+    merged_df = results.merge(races[["raceId", "circuitId", "year", "round"]], on="raceId", how="left")
     merged_df = merged_df.merge(drivers, on="driverId", how="left")
     merged_df = merged_df.merge(circuits, on="circuitId", how="left")
     merged_df = merged_df.merge(constructors, on="constructorId", how="left")
 
-    # Calculate time-based features
-    # Pit stop times
-    pit_stop_avg = pit_stops.groupby("raceId")["milliseconds"].mean().reset_index()
-    pit_stop_avg.rename(columns={"milliseconds": "avg_pit_time"}, inplace=True)
-    merged_df = merged_df.merge(pit_stop_avg, on="raceId", how="left")
-
-    # Lap times
-    lap_times = lap_times.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
-    avg_lap_time = lap_times.groupby(["driverId", "circuitId"])["milliseconds"].mean().reset_index()
-    avg_lap_time.rename(columns={"milliseconds": "avg_lap_time"}, inplace=True)
-    merged_df = merged_df.merge(avg_lap_time, on=["driverId", "circuitId"], how="left")
-
-    # Qualifying times
+    # Calculate track-specific features
+    # 1. Track characteristics
+    merged_df["circuit_length_norm"] = merged_df["length"] / merged_df["length"].max()
+    merged_df["circuit_corners_norm"] = merged_df["corners"] / merged_df["corners"].max()
+    
+    # 2. Track average performance metrics
+    track_lap_stats = lap_times.groupby("circuitId")["milliseconds"].agg(["mean", "std"]).reset_index()
+    track_lap_stats.columns = ["circuitId", "track_avg_lap", "track_std_lap"]
+    merged_df = merged_df.merge(track_lap_stats, on="circuitId", how="left")
+    
+    track_pit_stats = pit_stops.merge(races[["raceId", "circuitId"]], on="raceId").groupby("circuitId")["milliseconds"].mean().reset_index()
+    track_pit_stats.columns = ["circuitId", "track_avg_pit"]
+    merged_df = merged_df.merge(track_pit_stats, on="circuitId", how="left")
+    
+    # 3. Driver's historical performance at this track
+    driver_track_history = results.merge(races[["raceId", "circuitId"]], on="raceId") \
+        .groupby(["driverId", "circuitId"])["positionOrder"].agg(["mean", "min", "count"]).reset_index()
+    driver_track_history.columns = ["driverId", "circuitId", "driver_track_avg", "driver_track_best", "driver_track_races"]
+    merged_df = merged_df.merge(driver_track_history, on=["driverId", "circuitId"], how="left")
+    
+    # Calculate relative performance metrics
+    # Lap time relative to track average
+    merged_df["lap_time_ratio"] = merged_df.groupby(["raceId", "driverId"])["milliseconds"].transform("mean") / merged_df["track_avg_lap"]
+    
+    # Pit time relative to track average
+    merged_df["pit_time_ratio"] = merged_df.groupby(["raceId", "driverId"])["milliseconds"].transform("mean") / merged_df["track_avg_pit"]
+    
+    # Qualifying performance relative to track
     qualifying = qualifying.merge(races[["raceId", "circuitId"]], on="raceId", how="left")
     for col in ["q1", "q2", "q3"]:
         qualifying[col] = pd.to_numeric(qualifying[col], errors="coerce")
     qualifying["avg_qualifying_time"] = qualifying[["q1", "q2", "q3"]].mean(axis=1)
-    qualifying_avg = qualifying.groupby(["driverId", "circuitId"])["avg_qualifying_time"].mean().reset_index()
-    merged_df = merged_df.merge(qualifying_avg, on=["driverId", "circuitId"], how="left")
-    
-    # Add qualifying position as a feature for race predictions
-    qualifying["qualifying_position"] = qualifying.groupby("raceId")["avg_qualifying_time"].rank()
-    qualifying_pos = qualifying[["raceId", "driverId", "qualifying_position"]]
+    qualifying = qualifying.merge(track_lap_stats, on="circuitId", how="left")
+    qualifying["quali_time_ratio"] = qualifying["avg_qualifying_time"] / qualifying["track_avg_lap"]
+    qualifying_pos = qualifying[["raceId", "driverId", "quali_time_ratio"]]
     merged_df = merged_df.merge(qualifying_pos, on=["raceId", "driverId"], how="left")
 
     # Standings data
@@ -73,101 +85,90 @@ def prepare_features(data):
         merged_df[col] = merged_df[col].replace([np.inf, -np.inf], np.nan)
         # Fill remaining NaN with column median
         merged_df[col] = merged_df[col].fillna(merged_df[col].median())
-        # If still NaN (all values were NaN), fill with 0
-        merged_df[col] = merged_df[col].fillna(0)
+        # If still NaN (all values were NaN), fill with reasonable defaults
+        if col.endswith("_ratio"):
+            merged_df[col] = merged_df[col].fillna(1.0)  # 1.0 means average performance
+        elif "track" in col:
+            # For track averages, use overall averages
+            if "lap" in col:
+                merged_df[col] = merged_df[col].fillna(merged_df["milliseconds"].median())
+            elif "pit" in col:
+                merged_df[col] = merged_df[col].fillna(pit_stops["milliseconds"].median())
+        elif "driver_track" in col:
+            if "avg" in col:
+                merged_df[col] = merged_df[col].fillna(10)  # Midfield finish
+            elif "best" in col:
+                merged_df[col] = merged_df[col].fillna(20)  # Worst possible
+            elif "races" in col:
+                merged_df[col] = merged_df[col].fillna(0)   # Never raced here
     
     return merged_df
 
 def train_models():
     # Load and prepare data
     data = load_csv_data()
-
-    print("\n=== DATA QUALITY REPORT ===")
-    for name, df in data.items():
-        print(f"\n{name}:")
-        print(f"Shape: {df.shape}")
-        print(f"NaN count: {df.isna().sum().sum()}")
-        print(f"Inf count: {np.isinf(df.select_dtypes(include=np.number)).sum().sum()}")
-
     df = prepare_features(data)
     
-    # Common features for both models
-    base_features = [
-        "grid", "avg_lap_time", "avg_pit_time", "avg_qualifying_time",
-        "driver_points", "driver_position", "constructor_points", "constructor_position"
+    # Enhanced feature set
+    race_features = [
+        "grid",
+        "lap_time_ratio",
+        "pit_time_ratio",
+        "quali_time_ratio",
+        "driver_points",
+        "driver_position",
+        "constructor_points",
+        "constructor_position",
+        "circuit_length_norm",
+        "circuit_corners_norm",
+        "driver_track_avg",
+        "driver_track_best"
     ]
     
-    # Train qualifying position model
-    print("\n=== TRAINING QUALIFYING MODEL ===")
-    qual_features = base_features.copy()
-    X_qual = df[qual_features]
-    y_qual = df["qualifying_position"] / df["qualifying_position"].max()
+    X = df[race_features]
+    y = df["positionOrder"] / df["positionOrder"].max()  # Normalize target
     
-    # Check for invalid values in labels
-    if y_qual.isnull().any() or np.isinf(y_qual).any():
-        print("Found invalid values in qualifying labels. Fixing...")
-        y_qual = y_qual.fillna(y_qual.median())
-        y_qual = y_qual.replace([np.inf, -np.inf], y_qual.median())
-    
-    # Train race position model
-    print("\n=== TRAINING RACE POSITION MODEL ===")
-    race_features = base_features + ["qualifying_position"]
-    X_race = df[race_features]
-    y_race = df["positionOrder"] / df["positionOrder"].max()
-    
-    # Check for invalid values in labels
-    if y_race.isnull().any() or np.isinf(y_race).any():
-        print("Found invalid values in race labels. Fixing...")
-        y_race = y_race.fillna(y_race.median())
-        y_race = y_race.replace([np.inf, -np.inf], y_race.median())
-    
-    for model_type, X, y in [("qual", X_qual, y_qual), ("race", X_race, y_race)]:
-        print(f"\nTraining {model_type} model...")
-        
-        # Validate labels
-        print(f"Label stats before cleaning: min={y.min()}, max={y.max()}, NaN={y.isna().sum()}, Inf={(y == np.inf).sum()}")
-        
-        y = y.replace([np.inf, -np.inf], np.nan)
-        y = y.fillna(y.median())
-        
-        # If all values are bad, use default (0.5 for normalized target)
-        if len(y.unique()) == 1 or y.isna().any():
-            y = pd.Series([0.5]*len(y), index=y.index)
-            print("⚠️ Used fallback labels due to data issues")
-        
-        # Split data
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Scale features
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_test_scaled = scaler.transform(X_test)
-        
-        # Train model
-        model = XGBRegressor(
-            n_estimators=100,  # Reduced for faster testing
-            learning_rate=0.05,
-            max_depth=4,  # Reduced for faster testing
-            subsample=0.8,
-            colsample_bytree=0.8,
-            random_state=42
-        )
-        model.fit(X_train_scaled, y_train, eval_set=[(X_test_scaled, y_test)], verbose=True)
-        
-        # Evaluate
-        y_pred = model.predict(X_test_scaled)
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        mae = mean_absolute_error(y_test, y_pred)
-        
-        print(f"\n📊 {model_type.upper()} Model Performance:")
-        print(f"🔹 RMSE: {rmse:.4f}")
-        print(f"🔹 MAE: {mae:.4f}")
-        
-        # Save artifacts
-        joblib.dump(scaler, f"app/ml/{model_type}_scaler.pkl")
-        joblib.dump(model, f"app/ml/{model_type}_model.pkl")
-        
-    print("\n✅ All models trained and saved successfully!")
-
-if __name__ == "__main__":
-    train_models()
+    # Scale features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # Train model with enhanced parameters
+    model = XGBRegressor(
+        n_estimators=200,
+        learning_rate=0.03,
+        max_depth=6,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        min_child_weight=3,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
+        random_state=42,
+        eval_metric='mae'
+    )
+    
+    model.fit(
+        X_train_scaled, 
+        y_train, 
+        eval_set=[(X_test_scaled, y_test)],
+        early_stopping_rounds=20,
+        verbose=True
+    )
+    
+    # Evaluate
+    y_pred = model.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    mae = mean_absolute_error(y_test, y_pred)
+    
+    print(f"\n📊 Enhanced Race Model Performance:")
+    print(f"🔹 RMSE: {rmse:.4f}")
+    print(f"🔹 MAE: {mae:.4f}")
+    
+    # Save artifacts
+    joblib.dump(scaler, "app/ml/scaler.pkl")
+    joblib.dump(model, "app/ml/f1_xgb_model.pkl")
+    
+    print("\n✅ Enhanced model trained and saved successfully!")
