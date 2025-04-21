@@ -16,6 +16,7 @@ os.makedirs("app/ml", exist_ok=True)
 def prepare_features(data):
     """Prepare features with track-specific characteristics"""
     print("🟡 Preparing features...")
+    
     # Load all data files
     drivers = data["drivers"]
     results = data["results"]
@@ -28,14 +29,31 @@ def prepare_features(data):
     constructor_standings = data["standings"].copy()
     constructors = data["constructors"]
 
+    # Verify required circuit columns exist
+    circuit_columns = circuits.columns
+    required_circuit_cols = {'circuitId', 'name'}  # Minimal required columns
+    missing_cols = required_circuit_cols - set(circuit_columns)
+    
+    if missing_cols:
+        raise ValueError(f"Circuits DataFrame missing required columns: {missing_cols}")
+
+    # Add default values for optional circuit characteristics
+    if 'length' not in circuits.columns:
+        print("⚠️ 'length' column not found in circuits, using default values")
+        circuits['length'] = 5000  # Default circuit length in meters
+    if 'corners' not in circuits.columns:
+        print("⚠️ 'corners' column not found in circuits, using default values")
+        circuits['corners'] = 12  # Default number of corners
+    if 'altitude' not in circuits.columns:
+        circuits['altitude'] = 200  # Default altitude in meters
+
     # Merge base data
     merged_df = results.merge(races[["raceId", "circuitId", "year", "round"]], on="raceId", how="left")
     merged_df = merged_df.merge(drivers, on="driverId", how="left")
     merged_df = merged_df.merge(circuits, on="circuitId", how="left")
     merged_df = merged_df.merge(constructors, on="constructorId", how="left")
 
-    # Calculate track-specific features
-    # 1. Track characteristics
+    # Calculate normalized track characteristics
     merged_df["circuit_length_norm"] = merged_df["length"] / merged_df["length"].max()
     merged_df["circuit_corners_norm"] = merged_df["corners"] / merged_df["corners"].max()
     
