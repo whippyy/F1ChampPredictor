@@ -36,6 +36,22 @@ def validate_data(data):
         
 def prepare_features(data):
     """Prepare features with track-specific characteristics"""
+    # Add these at the top of prepare_features() to inspect data shapes
+    print(f"🔹 Results shape: {data['results'].shape}")
+    print(f"🔹 Circuits shape: {data['circuits'].shape}")
+    print(f"🔹 Circuits columns: {data['circuits'].columns.tolist()}")
+
+    # Add feature importance visualization at the end of train_models()
+    from xgboost import plot_importance
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(10, 8))
+    plot_importance(model, max_num_features=15)
+    plt.title("Feature Importance")
+    plt.tight_layout()
+    plt.savefig("app/ml/feature_importance.png")
+    print("📊 Feature importance plot saved to app/ml/feature_importance.png")
+
     print("🟡 Preparing features...")
     
     # Load all data files
@@ -49,6 +65,11 @@ def prepare_features(data):
     driver_standings = data["driver_standings"].copy()
     constructor_standings = data["standings"].copy()
     constructors = data["constructors"]
+
+    # Add this after loading data
+    print("\n=== DATA SNAPSHOT ===")
+    print("Circuits sample:")
+    print(data['circuits'][['circuitId', 'name', 'length', 'corners']].head(3))
 
     # Verify required circuit columns exist
     circuit_columns = circuits.columns
@@ -142,6 +163,10 @@ def prepare_features(data):
                 merged_df[col] = merged_df[col].fillna(20)  # Worst possible
             elif "races" in col:
                 merged_df[col] = merged_df[col].fillna(0)   # Never raced here
+    
+    # Add this at the end of prepare_features()
+    del drivers, results, races, circuits, lap_times, pit_stops, qualifying
+    del driver_standings, constructor_standings, constructors
     
     return merged_df
 
