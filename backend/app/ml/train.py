@@ -80,10 +80,36 @@ def prepare_features(data):
     if 'altitude' not in circuits.columns:
         circuits['altitude'] = 200
 
+    # First merge races with circuits to get circuitId for lap times
+    races_with_circuits = races[["raceId", "circuitId"]].merge(
+        circuits[["circuitId", "length", "corners", "altitude"]],
+        on="circuitId",
+        how="left"
+    )
+
+    # Calculate track average lap times - first join lap times with race circuit info
+    lap_times_with_circuit = lap_times.merge(
+        races_with_circuits,
+        on="raceId",
+        how="left"
+    )
+    
+    # Now calculate track stats
+    track_lap_stats = lap_times_with_circuit.groupby("circuitId")["milliseconds"].agg(["mean", "std"]).reset_index()
+    track_lap_stats.columns = ["circuitId", "track_avg_lap", "track_std_lap"]
+    
+    # Similarly for pit stops
+    pit_stops_with_circuit = pit_stops.merge(
+        races_with_circuits,
+        on="raceId",
+        how="left"
+    )
+    track_pit_stats = pit_stops_with_circuit.groupby("circuitId")["milliseconds"].mean().reset_index()
+    track_pit_stats.columns = ["circuitId", "track_avg_pit"]
+    
     # Merge base data
-    merged_df = results.merge(races[["raceId", "circuitId", "year", "round"]], on="raceId", how="left")
+    merged_df = results.merge(races_with_circuits, on="raceId", how="left")
     merged_df = merged_df.merge(drivers, on="driverId", how="left")
-    merged_df = merged_df.merge(circuits, on="circuitId", how="left")
     merged_df = merged_df.merge(constructors, on="constructorId", how="left")
 
     # Calculate normalized track characteristics
