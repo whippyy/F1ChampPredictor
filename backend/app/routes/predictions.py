@@ -49,64 +49,52 @@ def get_driver_stats(driver_id, circuit_id):
 
 @router.post("/predict-race")
 @router.post("/predict-race")
+@router.post("/predict-race")
 def predict_entire_race(data: TrackPredictionRequest):
-    """
-    Predicts the entire race order for a given track.
-    """
     circuit_id = data.circuit_id
-
+    
     if circuit_id not in valid_tracks:
         raise HTTPException(status_code=400, detail="Invalid circuit for current season")
 
-    print(f"🚦 Predicting race for track {circuit_id}...")
-
-    drivers_in_season = list(valid_drivers)
-    raw_predictions = []
-
-    for driver_id in drivers_in_season:
-        grid_position, avg_lap_time = get_driver_stats(driver_id, circuit_id)
-
-        # Get prediction
+    # Get all drivers who participated in current season
+    current_drivers = results_df[
+        results_df["raceId"].isin(current_races["raceId"])
+    ]["driverId"].unique()
+    
+    predictions = []
+    for driver_id in current_drivers:
+        # Get most recent grid position for this driver
+        last_race = results_df[
+            (results_df["driverId"] == driver_id) &
+            (results_df["raceId"].isin(current_races["raceId"]))
+        ].sort_values("raceId").iloc[-1]
+        
+        grid = last_race["grid"]
+        
         prediction = predict_race(
             driver_id=driver_id,
             circuit_id=circuit_id,
-            grid=grid_position,
+            grid=grid
         )
-
-        # Skip failed predictions
-        if prediction.get("status") != "success":
-            continue
-
-        raw_predictions.append((
-            driver_id, 
-            prediction["predicted_race_position"], 
-            prediction
-        ))
-
+        
+        if prediction["status"] == "success":
+            driver_info = drivers_df[drivers_df["driverId"] == driver_id].iloc[0]
+            team_info = constructors_df[
+                constructors_df["constructorId"] == last_race["constructorId"]
+            ].iloc[0]
+            
+            predictions.append({
+                "driver_id": driver_id,
+                "position": prediction["predicted_race_position"],
+                "driver_name": f"{driver_info['forename']} {driver_info['surname']}",
+                "team": team_info["name"],
+                "grid_position": grid
+            })
+    
     # Sort by predicted position
-    raw_predictions.sort(key=lambda x: x[1])
-
-    # Assign final positions (in case of ties or missing predictions)
-    predictions = []
-    for position, (driver_id, _, pred) in enumerate(raw_predictions, start=1):
-        driver_row = drivers_df[drivers_df["driverId"] == driver_id].iloc[0]
-        team_id = results_df[
-            (results_df["driverId"] == driver_id) & 
-            (results_df["raceId"].isin(current_races["raceId"]))
-        ]["constructorId"].values[0]
-        team_row = constructors_df[constructors_df["constructorId"] == team_id].iloc[0]
-
-        predictions.append({
-            "position": position,
-            "driver_id": driver_id,
-            "driver": f"{driver_row['forename']} {driver_row['surname']}",
-            "driver_code": driver_row.get("code", ""),
-            "team": team_row["name"],
-            "team_code": team_row.get("constructorRef", ""),
-            "track": pred["track"]
-        })
-
+    predictions.sort(key=lambda x: x["position"])
+    
     return {
-        "track": predictions[0]["track"] if predictions else "Unknown",
+        "track": circuits_df[circuits_df["circuitId"] == circuit_id]["name"].values[0],
         "predictions": predictions
     }
