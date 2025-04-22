@@ -21,6 +21,7 @@ driver_standings_df = f1_data.data["driver_standings"]
 constructor_standings_df = f1_data.data["standings"]
 constructors_df = f1_data.data["constructors"]
 
+
 # Load model and scaler
 model = joblib.load(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
 scaler = joblib.load(SCALER_PATH) if os.path.exists(SCALER_PATH) else None
