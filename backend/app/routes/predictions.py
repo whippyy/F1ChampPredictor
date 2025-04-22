@@ -32,30 +32,52 @@ def get_driver_stats(driver_id):
 def predict_entire_race(data: TrackPredictionRequest):
     circuit_id = data.circuit_id
     
+    # Debug: Print input circuit ID
+    print(f"🚦 Predicting for circuit ID: {circuit_id}")
+    
     if circuit_id not in valid_tracks:
         raise HTTPException(status_code=400, detail="Invalid circuit for current season")
 
+    # Debug: Print valid drivers
+    print(f"🏁 Valid drivers: {valid_drivers}")
+    
     predictions = []
     for driver_id in valid_drivers:
-        grid = get_driver_stats(driver_id)
-        prediction = predict_race(driver_id=driver_id, circuit_id=circuit_id, grid=grid)
-        
-        if prediction["status"] == "success":
-            driver_info = drivers_df[drivers_df["driverId"] == driver_id].iloc[0]
-            team_info = constructors_df[
-                constructors_df["constructorId"] == results_df[
-                    (results_df["driverId"] == driver_id) &
-                    (results_df["raceId"].isin(current_races["raceId"]))
-                ].iloc[-1]["constructorId"]
-            ].iloc[0]
+        try:
+            grid = get_driver_stats(driver_id)
+            print(f"🔹 Processing driver {driver_id}, grid: {grid}")
             
-            predictions.append({
-                "driver_id": driver_id,
-                "position": prediction["predicted_race_position"],
-                "driver_name": f"{driver_info['forename']} {driver_info['surname']}",
-                "team": team_info["name"],
-                "grid_position": grid
-            })
+            prediction = predict_race(
+                driver_id=driver_id,
+                circuit_id=circuit_id,
+                grid=grid
+            )
+            
+            if prediction["status"] == "success":
+                driver_info = drivers_df[drivers_df["driverId"] == driver_id].iloc[0]
+                team_info = constructors_df[
+                    constructors_df["constructorId"] == results_df[
+                        (results_df["driverId"] == driver_id) &
+                        (results_df["raceId"].isin(current_races["raceId"]))
+                    ].iloc[-1]["constructorId"]
+                ].iloc[0]
+                
+                predictions.append({
+                    "driver_id": driver_id,
+                    "position": prediction["predicted_race_position"],
+                    "driver_name": f"{driver_info['forename']} {driver_info['surname']}",
+                    "team": team_info["name"],
+                    "grid_position": grid
+                })
+            else:
+                print(f"❌ Prediction failed for driver {driver_id}: {prediction['error']}")
+                
+        except Exception as e:
+            print(f"⚠️ Error processing driver {driver_id}: {str(e)}")
+            continue
+    
+    # Debug: Print raw predictions before sorting
+    print("📊 Raw predictions:", predictions)
     
     predictions.sort(key=lambda x: x["position"])
     return {
