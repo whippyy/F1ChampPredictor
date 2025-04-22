@@ -38,6 +38,46 @@ def validate_data(data):
         if missing:
             raise ValueError(f"Table {table} missing columns: {missing}")
         
+import pandas as pd
+import numpy as np
+import xgboost as xgb
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from app.data_loader import load_csv_data
+import joblib
+import os
+from xgboost import plot_importance
+import matplotlib.pyplot as plt
+
+print("🟢 Training script started") 
+
+# Create ml directory if it doesn't exist
+os.makedirs("app/ml", exist_ok=True)
+
+def validate_data(data):
+    """Validate that all required data is present"""
+    required_tables = {
+        'drivers': ['driverId'],
+        'results': ['raceId', 'driverId', 'constructorId', 'grid', 'positionOrder'],
+        'races': ['raceId', 'circuitId', 'year', 'round'],
+        'circuits': ['circuitId', 'name'],
+        'lap_times': ['raceId', 'driverId', 'milliseconds'],
+        'pit_stops': ['raceId', 'driverId', 'milliseconds'],
+        'qualifying': ['raceId', 'driverId', 'q1', 'q2', 'q3'],
+        'driver_standings': ['raceId', 'driverId', 'points', 'position'],
+        'standings': ['raceId', 'constructorId', 'points', 'position'],
+        'constructors': ['constructorId']
+    }
+    
+    for table, cols in required_tables.items():
+        if table not in data:
+            raise ValueError(f"Missing required table: {table}")
+        missing = set(cols) - set(data[table].columns)
+        if missing:
+            raise ValueError(f"Table {table} missing columns: {missing}")
+        
 def prepare_features(data):
     """Prepare features focusing on driver-circuit performance history"""
     print("🟡 Preparing features...")
@@ -81,13 +121,14 @@ def prepare_features(data):
     )
     
     # 3. Qualifying performance (relative to others in same race)
+    # Fix deprecation warning by using transform instead of apply
     qualifying_perf = (
         qualifying[['raceId', 'driverId', 'position']]
-        .groupby('raceId')
-        .apply(lambda x: x.assign(
-            quali_percentile=x['position'].rank(pct=True)
-        ))
-        .reset_index(drop=True)
+        .assign(
+            quali_percentile=lambda x: x.groupby('raceId')['position'].transform(
+                lambda s: s.rank(pct=True)
+            )
+        )
         [['raceId', 'driverId', 'quali_percentile']]
     )
     
@@ -180,7 +221,7 @@ def train_models():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
     
-    # Train model
+    # Train model - using XGBRegressor without early_stopping_rounds
     model = XGBRegressor(
         objective='reg:squarederror',
         n_estimators=150,
@@ -195,7 +236,6 @@ def train_models():
         X_train_scaled,
         y_train,
         eval_set=[(X_test_scaled, y_test)],
-        early_stopping_rounds=20,
         verbose=True
     )
     
