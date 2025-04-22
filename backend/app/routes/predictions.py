@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.ml.predict import predict_race
 from app.schemas import TrackPredictionRequest
 from app.data_loader import load_csv_data
+from app.data_loader import f1_data
 import numpy as np
 import pandas as pd
 
@@ -93,8 +94,3 @@ def predict_entire_race(data: TrackPredictionRequest):
     
     # Sort by predicted position
     predictions.sort(key=lambda x: x["position"])
-    
-    return {
-        "track": circuits_df[circuits_df["circuitId"] == circuit_id]["name"].values[0],
-        "predictions": predictions
-    }

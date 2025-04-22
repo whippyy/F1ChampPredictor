@@ -3,22 +3,23 @@ import numpy as np
 import os
 import joblib
 from ..data_loader import load_csv_data
+from app.data_loader import f1_data
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "f1_xgb_model.pkl")
 SCALER_PATH = os.path.join(os.path.dirname(__file__), "scaler.pkl")
 
 # Load data
 data = load_csv_data()
-drivers_df = data["drivers"]
-circuits_df = data["circuits"]
-races_df = data["races"]
-results_df = data["results"]
-lap_times_df = data["lap_times"]
-pit_stops_df = data["pit_stops"]
-qualifying_df = data["qualifying"]
-driver_standings_df = data["driver_standings"]
-constructor_standings_df = data["standings"]
-constructors_df = data["constructors"]
+drivers_df = f1_data.data["drivers"]
+circuits_df = f1_data.data["circuits"]
+races_df = f1_data.data["races"]
+results_df = f1_data.data["results"]
+lap_times_df = f1_data.data["lap_times"]
+pit_stops_df = f1_data.data["pit_stops"]
+qualifying_df = f1_data.data["qualifying"]
+driver_standings_df = f1_data.data["driver_standings"]
+constructor_standings_df = f1_data.data["standings"]
+constructors_df = f1_data.data["constructors"]
 
 # Load model and scaler
 model = joblib.load(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
