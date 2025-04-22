@@ -2,7 +2,6 @@ import pandas as pd
 import joblib
 from pathlib import Path
 
-# Singleton pattern to load data once
 class F1DataLoader:
     _instance = None
     
@@ -13,26 +12,24 @@ class F1DataLoader:
         return cls._instance
     
     def _load_data(self):
-        data_dir = Path(__file__).parent.parent / "data"
+        # Correct path to point to app/data instead of data
+        data_dir = Path(__file__).parent / "data"  # Changed from parent.parent
         self.data = {
             "drivers": pd.read_csv(data_dir / "drivers.csv"),
             "circuits": pd.read_csv(data_dir / "circuits.csv"),
             "races": pd.read_csv(data_dir / "races.csv"),
             "results": pd.read_csv(data_dir / "results.csv"),
-            # ... load all other CSV files
+            "lap_times": pd.read_csv(data_dir / "lap_times.csv"),
+            "pit_stops": pd.read_csv(data_dir / "pit_stops.csv"),
+            "qualifying": pd.read_csv(data_dir / "qualifying.csv"),
+            "driver_standings": pd.read_csv(data_dir / "driver_standings.csv"),
+            "standings": pd.read_csv(data_dir / "constructor_standings.csv"),
+            "constructors": pd.read_csv(data_dir / "constructors.csv")
         }
         
         # Pre-compute useful views
         self.current_year = 2024
         self.current_races = self.data["races"][self.data["races"]["year"] == self.current_year]
-        
-    def get_data(self):
-        return self.data
-    
-    def get_current_races(self):
-        return self.current_races
-    
-    # Add other convenience methods as needed
 
 # Global instance
 f1_data = F1DataLoader()
