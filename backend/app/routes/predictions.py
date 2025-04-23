@@ -11,7 +11,7 @@ races_df = f1_data.data["races"]
 results_df = f1_data.data["results"]
 drivers_df = f1_data.data["drivers"]
 constructors_df = f1_data.data["constructors"]
-circuits_df = f1_data.data["circuits"]  # This fixes the error
+circuits_df = f1_data.data["circuits"]
 
 current_year = 2024
 current_races = races_df[races_df["year"] == current_year]
@@ -28,25 +28,31 @@ def get_driver_stats(driver_id):
         if not driver_results.empty else 10
     )
 
+def convert_numpy_types(obj):
+    """Convert numpy types to native Python types for JSON serialization"""
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: convert_numpy_types(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types(v) for v in obj]
+    return obj
+
 @router.post("/predict-race")
 def predict_entire_race(data: TrackPredictionRequest):
     circuit_id = data.circuit_id
     
-    # Debug: Print input circuit ID
-    print(f"🚦 Predicting for circuit ID: {circuit_id}")
-    
     if circuit_id not in valid_tracks:
         raise HTTPException(status_code=400, detail="Invalid circuit for current season")
-
-    # Debug: Print valid drivers
-    print(f"🏁 Valid drivers: {valid_drivers}")
     
     predictions = []
     for driver_id in valid_drivers:
         try:
             grid = get_driver_stats(driver_id)
-            print(f"🔹 Processing driver {driver_id}, grid: {grid}")
-            
             prediction = predict_race(
                 driver_id=driver_id,
                 circuit_id=circuit_id,
@@ -63,11 +69,11 @@ def predict_entire_race(data: TrackPredictionRequest):
                 ].iloc[0]
                 
                 predictions.append({
-                    "driver_id": driver_id,
-                    "position": prediction["predicted_race_position"],
+                    "driver_id": int(driver_id),  # Convert to native int
+                    "position": int(prediction["predicted_race_position"]),  # Convert to native int
                     "driver_name": f"{driver_info['forename']} {driver_info['surname']}",
                     "team": team_info["name"],
-                    "grid_position": grid
+                    "grid_position": int(grid)  # Convert to native int
                 })
             else:
                 print(f"❌ Prediction failed for driver {driver_id}: {prediction['error']}")
@@ -76,11 +82,12 @@ def predict_entire_race(data: TrackPredictionRequest):
             print(f"⚠️ Error processing driver {driver_id}: {str(e)}")
             continue
     
-    # Debug: Print raw predictions before sorting
-    print("📊 Raw predictions:", predictions)
-    
     predictions.sort(key=lambda x: x["position"])
-    return {
+    
+    # Convert all numpy types in the response
+    response = {
         "track": circuits_df[circuits_df["circuitId"] == circuit_id]["name"].values[0],
-        "predictions": predictions
+        "predictions": convert_numpy_types(predictions)
     }
+    
+    return response
