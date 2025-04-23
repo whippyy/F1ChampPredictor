@@ -199,11 +199,8 @@ def train_models():
         'driver_circuit_avg_finish',
         'driver_circuit_best_finish',
         'driver_circuit_top3_rate',
-        'driver_circuit_avg_points',
         'recent_avg_finish',
         'recent_avg_points',
-        'grid_to_quali_ratio',
-        'points_per_race',
         'current_points',
         'current_standing',
         'constructor_points',
@@ -211,7 +208,7 @@ def train_models():
     ]
     
     X = df[race_features]
-    y = df['positionOrder']  # Actual finishing position
+    y = df['positionOrder']
     
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
