@@ -94,6 +94,12 @@ def prepare_features(data):
     constructor_standings = data["standings"]
     constructors = data["constructors"]
 
+    # Convert numeric columns to appropriate types
+    results['grid'] = pd.to_numeric(results['grid'], errors='coerce').fillna(20)
+    results['positionOrder'] = pd.to_numeric(results['positionOrder'], errors='coerce').fillna(20)
+    results['position'] = pd.to_numeric(results['position'], errors='coerce').fillna(20)
+    results['points'] = pd.to_numeric(results['points'], errors='coerce').fillna(0)
+    
     # Create base dataframe with race and circuit info
     races_with_circuits = races[['raceId', 'circuitId', 'year', 'round']].copy()
     
@@ -121,7 +127,7 @@ def prepare_features(data):
     )
     
     # 3. Qualifying performance (relative to others in same race)
-    # Fix deprecation warning by using transform instead of apply
+    qualifying['position'] = pd.to_numeric(qualifying['position'], errors='coerce').fillna(20)
     qualifying_perf = (
         qualifying[['raceId', 'driverId', 'position']]
         .assign(
@@ -161,10 +167,7 @@ def prepare_features(data):
                on=['raceId', 'constructorId'], how='left')
     )
     
-    # Feature engineering
-    final_df['grid_to_quali_ratio'] = final_df['grid'] / (final_df['position'] + 1)
-    final_df['points_per_race'] = final_df['points'] / final_df['driver_circuit_races'].replace(0, 1)
-    
+    # Feature engineering - removed problematic features
     # Handle missing values
     fill_values = {
         'driver_circuit_races': 0,
@@ -175,8 +178,6 @@ def prepare_features(data):
         'quali_percentile': 0.5,
         'recent_avg_finish': 15,
         'recent_avg_points': 0,
-        'grid_to_quali_ratio': 1,
-        'points_per_race': 0,
         'current_points': 0,
         'current_standing': 20,
         'constructor_points': 0,
