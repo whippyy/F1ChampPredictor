@@ -113,7 +113,6 @@ def prepare_features(data):
             driver_circuit_avg_finish=('positionOrder', 'mean'),
             driver_circuit_best_finish=('positionOrder', 'min'),
             driver_circuit_top3_rate=('positionOrder', lambda x: (x <= 3).mean()),
-            driver_circuit_avg_points=('points', 'mean')
         )
         .reset_index()
     )
@@ -174,7 +173,6 @@ def prepare_features(data):
         'driver_circuit_avg_finish': 15,
         'driver_circuit_best_finish': 20,
         'driver_circuit_top3_rate': 0,
-        'driver_circuit_avg_points': 0,
         'quali_percentile': 0.5,
         'recent_avg_finish': 15,
         'recent_avg_points': 0,
