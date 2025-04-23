@@ -5,8 +5,8 @@ import joblib
 from ..data_loader import load_csv_data
 from app.data_loader import f1_data
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "f1_xgb_model.pkl")
-SCALER_PATH = os.path.join(os.path.dirname(__file__), "scaler.pkl")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "f1_driver_model.pkl")
+SCALER_PATH = os.path.join(os.path.dirname(__file__), "f1_scaler.pkl")
 
 # Load data
 data = load_csv_data()
@@ -86,36 +86,51 @@ def predict_race(*, driver_id: int, circuit_id: str, grid: int):
         # Get driver's history at this track
         driver_history = get_driver_track_history(driver_id, circuit_id)
         
-        # Get latest standings
-        latest_race = races_df[races_df["year"] == current_year].sort_values("round").iloc[-1]
-        latest_race_id = latest_race["raceId"]
+        # Get latest standings - handle case where no races exist
+        current_year_races = races_df[races_df["year"] == current_year]
+        if current_year_races.empty:
+            latest_race_id = None
+        else:
+            latest_race = current_year_races.sort_values("round").iloc[-1]
+            latest_race_id = latest_race["raceId"]
         
-        # Get driver and constructor standings
-        driver_standing = driver_standings_df[
-            (driver_standings_df["raceId"] == latest_race_id) &
-            (driver_standings_df["driverId"] == driver_id)
-        ].iloc[0] if not driver_standings_df.empty else None
+        # Get driver and constructor standings with proper checks
+        driver_standing = None
+        constructor_standing = None
+        constructor_id = None
         
-        constructor_id = results_df[
-            (results_df["driverId"] == driver_id) &
-            (results_df["raceId"] == latest_race_id)
-        ]["constructorId"].values[0]
-        
-        constructor_standing = constructor_standings_df[
-            (constructor_standings_df["raceId"] == latest_race_id) &
-            (constructor_standings_df["constructorId"] == constructor_id)
-        ].iloc[0] if not constructor_standings_df.empty else None
+        if latest_race_id is not None:
+            driver_standing_df = driver_standings_df[
+                (driver_standings_df["raceId"] == latest_race_id) &
+                (driver_standings_df["driverId"] == driver_id)
+            ]
+            if not driver_standing_df.empty:
+                driver_standing = driver_standing_df.iloc[0]
+            
+            constructor_results = results_df[
+                (results_df["driverId"] == driver_id) &
+                (results_df["raceId"] == latest_race_id)
+            ]
+            if not constructor_results.empty:
+                constructor_id = constructor_results.iloc[0]["constructorId"]
+                
+                constructor_standing_df = constructor_standings_df[
+                    (constructor_standings_df["raceId"] == latest_race_id) &
+                    (constructor_standings_df["constructorId"] == constructor_id)
+                ]
+                if not constructor_standing_df.empty:
+                    constructor_standing = constructor_standing_df.iloc[0]
 
-        # Prepare input features matching the trained model
+        # Prepare input features with fallback values
         input_data = pd.DataFrame([{
             "grid": float(grid),
-            "quali_percentile": 0.5,  # Placeholder - calculate from qualifying data
+            "quali_percentile": 0.5,
             "driver_circuit_races": driver_history.get("driver_circuit_races", 0),
             "driver_circuit_avg_finish": driver_history.get("driver_avg_finish", 15),
             "driver_circuit_best_finish": driver_history.get("driver_best_finish", 20),
             "driver_circuit_top3_rate": driver_history.get("driver_finish_rate", 0),
-            "recent_avg_finish": 10,  # Should calculate from last 5 races
-            "recent_avg_points": 5,   # Should calculate from last 5 races
+            "recent_avg_finish": 10,
+            "recent_avg_points": 5,
             "current_points": driver_standing["points"] if driver_standing else 0,
             "current_standing": driver_standing["position"] if driver_standing else 20,
             "constructor_points": constructor_standing["points"] if constructor_standing else 0,
