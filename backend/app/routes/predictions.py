@@ -50,9 +50,14 @@ def predict_entire_race(data: TrackPredictionRequest):
         raise HTTPException(status_code=400, detail="Invalid circuit for current season")
     
     predictions = []
+    seen_positions = set()  # To track used positions
+    
     for driver_id in valid_drivers:
         try:
             grid = get_driver_stats(driver_id)
+            # Ensure grid position is valid (1-20)
+            grid = max(1, min(20, grid))
+            
             prediction = predict_race(
                 driver_id=driver_id,
                 circuit_id=circuit_id,
@@ -68,26 +73,35 @@ def predict_entire_race(data: TrackPredictionRequest):
                     ].iloc[-1]["constructorId"]
                 ].iloc[0]
                 
+                # Get predicted position and ensure it's unique
+                predicted_pos = int(prediction["predicted_race_position"])
+                while predicted_pos in seen_positions:
+                    predicted_pos += 1
+                seen_positions.add(predicted_pos)
+                
+                # Ensure position is between 1-20
+                predicted_pos = max(1, min(20, predicted_pos))
+                
                 predictions.append({
-                    "driver_id": int(driver_id),  # Convert to native int
-                    "position": int(prediction["predicted_race_position"]),  # Convert to native int
+                    "driver_id": int(driver_id),
+                    "position": predicted_pos,
                     "driver_name": f"{driver_info['forename']} {driver_info['surname']}",
                     "team": team_info["name"],
-                    "grid_position": int(grid)  # Convert to native int
+                    "grid_position": int(grid)
                 })
-            else:
-                print(f"❌ Prediction failed for driver {driver_id}: {prediction['error']}")
                 
         except Exception as e:
             print(f"⚠️ Error processing driver {driver_id}: {str(e)}")
             continue
     
+    # Sort by position and ensure no duplicates
     predictions.sort(key=lambda x: x["position"])
     
-    # Convert all numpy types in the response
-    response = {
-        "track": circuits_df[circuits_df["circuitId"] == circuit_id]["name"].values[0],
-        "predictions": convert_numpy_types(predictions)
-    }
+    # Final position adjustment to ensure no gaps or duplicates
+    for i, prediction in enumerate(predictions, 1):
+        prediction["position"] = i
     
-    return response
+    return {
+        "track": circuits_df[circuits_df["circuitId"] == circuit_id]["name"].values[0],
+        "predictions": predictions
+    }
