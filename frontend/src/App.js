@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Link, NavLink } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Prediction from "./components/Predictions";
 import RacePoints from "./components/Racepoints";
@@ -9,17 +9,48 @@ const App = () => {
   return (
     <Router>
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
-        <header className="bg-gray-900 shadow-lg">
+        <header className="bg-gray-900 shadow-lg sticky top-0 z-50">
           <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <img src="/f1-logo.png" alt="F1 Logo" className="h-12" />
-                <h1 className="text-2xl font-bold">F1 Dashboard</h1>
+            <div className="flex flex-col md:flex-row items-center justify-between">
+              <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                <img 
+                  src="/f1-logo.png" 
+                  alt="F1 Logo" 
+                  className="h-10 md:h-12"
+                />
+                <h1 className="text-xl md:text-2xl font-bold">F1 Dashboard</h1>
               </div>
-              <nav className="flex space-x-6">
-                <Link to="/" className="hover:text-red-500 font-medium transition-colors">Dashboard</Link>
-                <Link to="/predict" className="hover:text-red-500 font-medium transition-colors">Predict Race</Link>
-                <Link to="/race-points" className="hover:text-red-500 font-medium transition-colors">Race Points</Link>
+              <nav className="flex space-x-1 md:space-x-6">
+                <NavLink 
+                  to="/" 
+                  className={({ isActive }) => 
+                    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    }`
+                  }
+                >
+                  Dashboard
+                </NavLink>
+                <NavLink 
+                  to="/predict" 
+                  className={({ isActive }) => 
+                    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    }`
+                  }
+                >
+                  Predict Race
+                </NavLink>
+                <NavLink 
+                  to="/race-points" 
+                  className={({ isActive }) => 
+                    `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive ? 'bg-red-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    }`
+                  }
+                >
+                  Race Points
+                </NavLink>
               </nav>
             </div>
           </div>
@@ -32,10 +63,15 @@ const App = () => {
             <Route path="/race-points" element={<RacePoints />} />
           </Routes>
         </main>
+
+        <footer className="bg-gray-900 py-6 mt-8">
+          <div className="container mx-auto px-6 text-center text-gray-400 text-sm">
+            <p>© {new Date().getFullYear()} F1 Dashboard. All data sourced from public APIs.</p>
+          </div>
+        </footer>
       </div>
     </Router>
   );
 };
 
 export default App;
-
