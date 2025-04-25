@@ -1,45 +1,174 @@
-.prediction-container {
-  padding: 2rem 1rem;
+.predictions-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 2rem;
+}
+
+.predictions-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.predictions-header h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(to right, var(--f1-red), var(--f1-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.predictions-header p {
+  color: var(--f1-light);
+  opacity: 0.8;
+}
+
+.positions-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.position-card {
+  background: rgba(30, 30, 30, 0.7);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid rgba(225, 6, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.position-card:hover {
+  border-color: rgba(225, 6, 0, 0.4);
+}
+
+.position-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.position-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--f1-red);
+  color: white;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.drivers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
 }
 
 .driver-card {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  background: rgba(42, 42, 42, 0.8);
+  border-radius: 6px;
+  padding: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.driver-card.selected {
+  background: rgba(225, 6, 0, 0.1);
+  border-color: var(--f1-red);
 }
 
 .driver-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(42, 42, 42, 1);
 }
 
-.position-indicator {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background-color: #e10600;
-  color: white;
-  font-size: 0.75rem;
+.driver-image-container {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.driver-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.driver-placeholder {
+  width: 100%;
+  height: 120px;
+  background: var(--f1-gray);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
   font-weight: bold;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  min-width: 1.5rem;
-  text-align: center;
+  color: var(--f1-light);
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .driver-card {
-    padding: 0.5rem;
+.team-logo {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--f1-black);
+  background: white;
+  padding: 2px;
+}
+
+.driver-info h4 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.driver-info p {
+  font-size: 0.8rem;
+  color: var(--f1-light);
+  opacity: 0.7;
+}
+
+.submit-btn {
+  display: block;
+  margin: 2rem auto 0;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 1rem;
+}
+
+.error-container {
+  background: rgba(225, 6, 0, 0.1);
+  border: 1px solid var(--f1-red);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.error-container p {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .drivers-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
   
-  .driver-card img {
-    width: 10px;
-    height: 10px;
+  .predictions-container {
+    padding: 1rem;
   }
 }
