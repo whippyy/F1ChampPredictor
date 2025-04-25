@@ -1,92 +1,90 @@
-import React, { useState } from "react";
-import { BrowserRouter as Router, Route, Routes, NavLink, useLocation } from "react-router-dom";
-import Dashboard from "./components/Dashboard";
-import Prediction from "./components/Predictions";
-import RacePoints from "./components/Racepoints";
-import "./App.css";
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import Dashboard from './components/Dashboard';
+import Predictions from './components/Predictions';
+import RacePoints from './components/RacePoints';
+import './App.css';
 
-const AppContent = () => {
-  const location = useLocation();
+const App = () => {
   const [loading, setLoading] = useState(false);
 
-  const pageBackground =
-    location.pathname === "/"
-      ? "from-gray-900 to-gray-800"
-      : location.pathname === "/predict"
-      ? "from-black to-red-900"
-      : "from-gray-800 to-gray-700";
-
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${pageBackground} text-white`}>
-      <header className="bg-gray-900 shadow-lg sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center space-x-4 mb-4 md:mb-0">
-              <img 
-                src="/f1-logo.png" 
-                alt="F1 Logo" 
-                className="h-10 md:h-12 logo-img"
-              />
-              <h1 className="text-xl md:text-2xl font-bold">F1 Dashboard</h1>
-            </div>
-            <nav className="flex space-x-1 md:space-x-6">
-              <NavLink 
-                to="/" 
-                className={({ isActive }) => 
-                  `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive ? 'bg-red-600 text-white nav-link-active' : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`
-                }
+    <Router>
+      <div className="app-container">
+        <Header />
+        
+        <AnimatePresence mode="wait">
+          <Routes>
+            <Route path="/" element={
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
               >
-                Dashboard
-              </NavLink>
-              <NavLink 
-                to="/predict" 
-                className={({ isActive }) => 
-                  `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive ? 'bg-red-600 text-white nav-link-active' : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`
-                }
-              >
-                Predict Race
-              </NavLink>
-              <NavLink 
-                to="/race-points" 
-                className={({ isActive }) => 
-                  `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive ? 'bg-red-600 text-white nav-link-active' : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`
-                }
-              >
-                Race Points
-              </NavLink>
-            </nav>
-          </div>
-        </div>
-      </header>
+                <Dashboard />
+              </motion.div>
+            } />
+            <Route path="/predict" element={<Predictions />} />
+            <Route path="/race-points" element={<RacePoints />} />
+          </Routes>
+        </AnimatePresence>
 
-      <main className="container mx-auto px-6 py-8">
-        {loading && <div className="loading-spinner mx-auto my-10" />}
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/predict" element={<Prediction />} />
-          <Route path="/race-points" element={<RacePoints />} />
-        </Routes>
-      </main>
-
-      <footer className="bg-gray-900 py-6 mt-8">
-        <div className="container mx-auto px-6 text-center text-gray-400 text-sm footer-text">
-          <p>© {new Date().getFullYear()} F1 Dashboard. Data sourced from <a href="https://ergast.com/mrd/" target="_blank" rel="noreferrer">public APIs</a>.</p>
-        </div>
-      </footer>
-    </div>
+        <Footer />
+      </div>
+    </Router>
   );
 };
 
-const App = () => (
-  <Router>
-    <AppContent />
-  </Router>
+const Header = () => (
+  <header className="app-header">
+    <div className="header-content">
+      <div className="logo-container">
+        <motion.img 
+          src="/f1-logo.png" 
+          alt="F1 Logo"
+          className="logo"
+          whileHover={{ scale: 1.05 }}
+        />
+        <h1 className="app-title">F1 INSIGHTS</h1>
+      </div>
+      
+      <nav className="main-nav">
+        <NavLink 
+          to="/" 
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          DASHBOARD
+        </NavLink>
+        <NavLink 
+          to="/predict" 
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          PREDICTIONS
+        </NavLink>
+        <NavLink 
+          to="/race-points" 
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          RACE POINTS
+        </NavLink>
+      </nav>
+    </div>
+  </header>
+);
+
+const Footer = () => (
+  <footer className="app-footer">
+    <div className="footer-content">
+      <p>© {new Date().getFullYear()} F1 INSIGHTS | Powered by <a href="https://ergast.com/mrd/" target="_blank" rel="noopener noreferrer">Ergast API</a></p>
+      <div className="footer-links">
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+  </footer>
 );
 
 export default App;
