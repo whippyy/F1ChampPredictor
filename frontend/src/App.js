@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-do
 import { motion, AnimatePresence } from 'framer-motion';
 import Dashboard from './components/Dashboard';
 import Predictions from './components/Predictions';
-import RacePoints from './components/RacePoints';
+import RacePoints from './components/Racepoints';
 import './App.css';
 
 const App = () => {
