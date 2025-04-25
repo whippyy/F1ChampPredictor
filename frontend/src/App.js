@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes, Link, NavLink } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, NavLink } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Prediction from "./components/Predictions";
 import RacePoints from "./components/Racepoints";
