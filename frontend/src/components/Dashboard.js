@@ -17,8 +17,8 @@ const Dashboard = () => {
           axios.get('http://127.0.0.1:8000/races?season=2024')
         ]);
         
-        setDrivers(driversResponse.data.data || []);
-        setRaces(racesResponse.data.data || []);
+        setDrivers(driversResponse.data?.data || []);
+        setRaces(racesResponse.data?.data || []);
       } catch (err) {
         setError('Failed to load data. Please try again later.');
         console.error('Error fetching data:', err);
@@ -29,6 +29,28 @@ const Dashboard = () => {
 
     fetchData();
   }, []);
+
+  const getInitials = (name) => {
+    if (!name) return 'TR';
+    return name.split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Date TBD';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return 'Date TBD';
+    }
+  };
 
   if (loading) {
     return (
@@ -72,7 +94,7 @@ const Dashboard = () => {
         <div className="drivers-grid">
           {drivers.map((driver, index) => (
             <motion.div 
-              key={driver.driverId}
+              key={driver.driverId || index}
               className="driver-card"
               whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
               transition={{ duration: 0.3 }}
@@ -81,25 +103,35 @@ const Dashboard = () => {
                 {driver.imageUrl ? (
                   <img 
                     src={driver.imageUrl} 
-                    alt={`${driver.forename} ${driver.surname}`}
+                    alt={`${driver.forename || ''} ${driver.surname || ''}`}
                     className="driver-image"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '';
+                      e.target.style.display = 'none';
+                    }}
                   />
                 ) : (
                   <div className="driver-placeholder">
-                    {driver.forename[0]}{driver.surname[0]}
+                    {getInitials(`${driver.forename} ${driver.surname}`)}
                   </div>
                 )}
                 {driver.teamLogo && (
                   <img 
                     src={driver.teamLogo} 
-                    alt={driver.team} 
+                    alt={driver.team || 'Team logo'} 
                     className="team-logo"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '';
+                      e.target.style.display = 'none';
+                    }}
                   />
                 )}
               </div>
               <div className="driver-info">
-                <h3>{driver.forename} {driver.surname}</h3>
-                <p>{driver.team}</p>
+                <h3>{driver.forename || 'First'} {driver.surname || 'Last'}</h3>
+                <p>{driver.team || 'Team not specified'}</p>
                 <div className="driver-number">{index + 1}</div>
               </div>
             </motion.div>
@@ -122,26 +154,25 @@ const Dashboard = () => {
                 {race.circuitImage ? (
                   <img 
                     src={race.circuitImage} 
-                    alt={race.circuitName}
+                    alt={race.circuitName || 'Race circuit'}
                     className="race-image"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '';
+                      e.target.style.display = 'none';
+                    }}
                   />
                 ) : (
                   <div className="race-placeholder">
-                    {race.circuitName.split(' ').map(word => word[0]).join('')}
+                    {getInitials(race.circuitName)}
                   </div>
                 )}
               </div>
               <div className="race-info">
-                <h3>{race.raceName}</h3>
-                <p className="race-circuit">{race.circuitName}</p>
-                <p className="race-date">
-                  {new Date(race.date).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
-                </p>
-                <div className="race-round">Round {race.round}</div>
+                <h3>{race.raceName || 'Race name not available'}</h3>
+                <p className="race-circuit">{race.circuitName || 'Circuit not specified'}</p>
+                <p className="race-date">{formatDate(race.date)}</p>
+                <div className="race-round">Round {race.round || 'N/A'}</div>
               </div>
             </motion.div>
           ))}
