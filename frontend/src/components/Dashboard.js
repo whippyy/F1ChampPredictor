@@ -30,7 +30,7 @@ const Dashboard = () => {
     circuits: true
   });
   const [error, setError] = useState(null);
-  
+
   const getTeamColor = (teamRef) => {
     return TEAM_COLORS[teamRef] || '#333333'; // Default dark gray if no color defined
   };
@@ -154,52 +154,69 @@ const Dashboard = () => {
       <section className="drivers-section">
         <h2>Drivers Championship</h2>
         <div className="drivers-grid">
-          {drivers.map((driver) => (
-            <motion.div 
-              key={`${driver.driverId}-${driver.teamId}`}
-              className="driver-card"
-              whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="driver-image-container">
-                {driver.imageUrl ? (
-                  <img 
-                    src={driver.imageUrl} 
-                    alt={`${driver.forename} ${driver.surname}`}
-                    className="driver-image"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '';
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="driver-placeholder">
-                    {getInitials(`${driver.forename} ${driver.surname}`)}
+          {drivers.map((driver) => {
+            const teamColor = getTeamColor(driver.teamRef);
+            return (
+              <motion.div 
+                key={`${driver.driverId}-${driver.teamId}`}
+                className="driver-card"
+                style={{
+                  background: `linear-gradient(to bottom, ${teamColor} 30%, #1a1a1a 100%)`,
+                  borderTop: `3px solid ${teamColor}`
+                }}
+                whileHover={{ 
+                  y: -5, 
+                  boxShadow: `0 10px 20px ${teamColor}33`
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="driver-image-container">
+                  {driver.imageUrl ? (
+                    <img 
+                      src={driver.imageUrl} 
+                      alt={`${driver.forename} ${driver.surname}`}
+                      className="driver-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '';
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="driver-placeholder">
+                      {getInitials(`${driver.forename} ${driver.surname}`)}
+                    </div>
+                  )}
+                  {driver.teamRef && (
+                    <img 
+                      src={`/team-logos/${driver.teamRef}.png`} 
+                      alt={driver.teamName}
+                      className="team-logo"
+                      style={{ borderColor: teamColor }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '';
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
+                </div>
+                <div className="driver-info">
+                  <h3>{driver.forename} {driver.surname}</h3>
+                  <p>{driver.teamName}</p>
+                  <div 
+                    className="driver-number"
+                    style={{ backgroundColor: teamColor }}
+                  >
+                    {driver.number || 'N/A'}
                   </div>
-                )}
-                {driver.teamRef && (
-                  <img 
-                    src={`/team-logos/${driver.teamRef}.png`} 
-                    alt={driver.teamName}
-                    className="team-logo"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '';
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                )}
-              </div>
-              <div className="driver-info">
-                <h3>{driver.forename} {driver.surname}</h3>
-                <p>{driver.teamName}</p>
-                <div className="driver-number">{driver.number || 'N/A'}</div>
-              </div>
-            </motion.div>
-          ))}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
+
 
       {/* Races Timeline */}
       <section className="races-section">
