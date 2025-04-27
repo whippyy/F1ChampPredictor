@@ -1,0 +1,3 @@
+Rework the styling
+make sure api calls are correct
+fix not being able to pull track names or driver teams
