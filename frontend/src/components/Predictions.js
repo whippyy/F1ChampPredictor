@@ -4,65 +4,99 @@ import axios from 'axios';
 import './Predictions.css';
 
 const Predictions = () => {
+  const [tracks, setTracks] = useState([]);
+  const [selectedTrack, setSelectedTrack] = useState(null);
   const [drivers, setDrivers] = useState([]);
+  const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [prediction, setPrediction] = useState([]);
   const [error, setError] = useState(null);
+  const [userPrediction, setUserPrediction] = useState([]);
+
+  useEffect(() => {
+    const fetchTracks = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/races?season=2024');
+        setTracks(response.data?.data || []);
+      } catch (err) {
+        setError('Failed to load tracks. Please try again later.');
+        console.error('Error fetching tracks:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTracks();
+  }, []);
 
   useEffect(() => {
     const fetchDrivers = async () => {
       try {
         const response = await axios.get('http://127.0.0.1:8000/drivers?with_images=true');
-        setDrivers(response.data.data || []);
+        setDrivers(response.data?.data || []);
       } catch (err) {
-        setError('Failed to load drivers. Please try again later.');
         console.error('Error fetching drivers:', err);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchDrivers();
   }, []);
 
-  const handlePrediction = (position) => (driverId) => {
-    setPrediction(prev => {
+  const handleTrackSelect = async (track) => {
+    setSelectedTrack(track);
+    setLoading(true);
+    try {
+      // Fetch predictions for this specific track
+      const response = await axios.get(`http://127.0.0.1:8000/predictions?raceId=${track.raceId}`);
+      setPredictions(response.data?.data || []);
+    } catch (err) {
+      setError(`Failed to load predictions for ${track.raceName}. Please try again.`);
+      console.error('Error fetching predictions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDriverSelect = (position) => (driverId) => {
+    setUserPrediction(prev => {
       const newPrediction = [...prev];
       newPrediction[position - 1] = driverId;
       return newPrediction;
     });
   };
 
-  const getDriverById = (id) => drivers.find(driver => driver.driverId === id);
+  const handleSubmitPrediction = async () => {
+    if (userPrediction.length < 5) {
+      setError('Please select drivers for all top 5 positions');
+      return;
+    }
 
-  const handleSubmit = async () => {
-    if (prediction.length < 5) return;
-    
     try {
-      // Submit prediction to backend
-      console.log('Submitting prediction:', prediction);
-      // Show success message
+      await axios.post('http://127.0.0.1:8000/predictions', {
+        raceId: selectedTrack.raceId,
+        prediction: userPrediction
+      });
+      setError(null);
+      alert('Prediction submitted successfully!');
     } catch (err) {
       setError('Failed to submit prediction. Please try again.');
+      console.error('Error submitting prediction:', err);
     }
   };
 
-  if (loading) {
+  const getDriverById = (id) => drivers.find(driver => driver.driverId === id);
+
+  if (loading && !selectedTrack) {
     return (
       <div className="loading-container">
         <div className="loading-spinner" />
-        <p>Loading drivers...</p>
+        <p>Loading tracks...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <motion.div 
-        className="error-container"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
+      <div className="error-container">
         <p>{error}</p>
         <button 
           className="btn btn-primary"
@@ -70,7 +104,7 @@ const Predictions = () => {
         >
           Retry
         </button>
-      </motion.div>
+      </div>
     );
   }
 
@@ -82,74 +116,170 @@ const Predictions = () => {
       transition={{ duration: 0.5 }}
     >
       <div className="predictions-header">
-        <h2>Race Predictions</h2>
-        <p>Select your top 5 finishers for the next race</p>
+        <h1>F1 RACE PREDICTIONS</h1>
+        <p>Select a track and predict the top 5 finishers</p>
       </div>
 
-      <div className="positions-grid">
-        {[1, 2, 3, 4, 5].map(position => (
-          <div key={position} className="position-card">
-            <div className="position-header">
-              <span className="position-number">{position}</span>
-              <h3>
-                {position === 1 ? 'Winner' : 
-                 position === 2 ? '2nd Place' : 
-                 position === 3 ? '3rd Place' : 
-                 `${position}th Place`}
-              </h3>
-            </div>
-
-            <div className="drivers-grid">
-              {drivers.map(driver => (
-                <motion.div
-                  key={driver.driverId}
-                  className={`driver-card ${
-                    prediction[position - 1] === driver.driverId ? 'selected' : ''
-                  }`}
-                  onClick={() => handlePrediction(position)(driver.driverId)}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="driver-image-container">
-                    {driver.imageUrl ? (
-                      <img 
-                        src={driver.imageUrl} 
-                        alt={`${driver.forename} ${driver.surname}`}
-                        className="driver-image"
-                      />
-                    ) : (
-                      <div className="driver-placeholder">
-                        {driver.forename[0]}{driver.surname[0]}
-                      </div>
-                    )}
-                    {driver.teamLogo && (
-                      <img 
-                        src={driver.teamLogo} 
-                        alt={driver.team} 
-                        className="team-logo"
-                      />
-                    )}
-                  </div>
-                  <div className="driver-info">
-                    <h4>{driver.forename[0]}. {driver.surname}</h4>
-                    <p>{driver.team}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+      {!selectedTrack ? (
+        <div className="tracks-selection">
+          <h2>Select a Race</h2>
+          <div className="tracks-grid">
+            {tracks.map(track => (
+              <motion.div
+                key={track.raceId}
+                className="track-card"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleTrackSelect(track)}
+              >
+                <div className="track-image-container">
+                  {track.circuitImage ? (
+                    <img 
+                      src={track.circuitImage} 
+                      alt={track.circuitName}
+                      className="track-image"
+                    />
+                  ) : (
+                    <div className="track-placeholder">
+                      {track.circuitName?.split(' ').map(word => word[0]).join('') || 'TR'}
+                    </div>
+                  )}
+                </div>
+                <div className="track-info">
+                  <h3>{track.raceName}</h3>
+                  <p>{track.circuitName}</p>
+                  <p className="track-date">
+                    {new Date(track.date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="prediction-interface">
+          <div className="selected-track">
+            <button 
+              className="btn btn-back"
+              onClick={() => setSelectedTrack(null)}
+            >
+              &larr; Back to all tracks
+            </button>
+            <h2>{selectedTrack.raceName}</h2>
+            <p>{selectedTrack.circuitName} - {new Date(selectedTrack.date).toLocaleDateString()}</p>
+          </div>
 
-      <motion.button
-        className="btn btn-primary submit-btn"
-        onClick={handleSubmit}
-        disabled={prediction.length < 5}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        Submit Prediction
-      </motion.button>
+          {loading ? (
+            <div className="loading-container">
+              <div className="loading-spinner" />
+              <p>Loading predictions...</p>
+            </div>
+          ) : (
+            <>
+              <div className="prediction-positions">
+                {[1, 2, 3, 4, 5].map(position => (
+                  <div key={position} className="position-card">
+                    <div className="position-header">
+                      <span className="position-number">{position}</span>
+                      <h3>
+                        {position === 1 ? 'Winner' : 
+                         position === 2 ? '2nd Place' : 
+                         position === 3 ? '3rd Place' : 
+                         `${position}th Place`}
+                      </h3>
+                    </div>
+
+                    <div className="drivers-selection">
+                      {drivers.map(driver => (
+                        <motion.div
+                          key={driver.driverId}
+                          className={`driver-option ${
+                            userPrediction[position - 1] === driver.driverId ? 'selected' : ''
+                          }`}
+                          onClick={() => handleDriverSelect(position)(driver.driverId)}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <div className="driver-image-container">
+                            {driver.imageUrl ? (
+                              <img 
+                                src={driver.imageUrl} 
+                                alt={`${driver.forename} ${driver.surname}`}
+                                className="driver-image"
+                              />
+                            ) : (
+                              <div className="driver-placeholder">
+                                {driver.forename[0]}{driver.surname[0]}
+                              </div>
+                            )}
+                            {driver.teamLogo && (
+                              <img 
+                                src={driver.teamLogo} 
+                                alt={driver.team} 
+                                className="team-logo"
+                              />
+                            )}
+                          </div>
+                          <div className="driver-info">
+                            <h4>{driver.forename} {driver.surname}</h4>
+                            <p>{driver.team}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="prediction-actions">
+                <button
+                  className="btn btn-primary submit-btn"
+                  onClick={handleSubmitPrediction}
+                  disabled={userPrediction.length < 5}
+                >
+                  Submit Prediction
+                </button>
+              </div>
+
+              {predictions.length > 0 && (
+                <div className="community-predictions">
+                  <h3>Community Predictions</h3>
+                  <div className="predictions-grid">
+                    {predictions.map((pred, idx) => (
+                      <div key={idx} className="community-prediction">
+                        <h4>Prediction #{idx + 1}</h4>
+                        <div className="predicted-drivers">
+                          {pred.slice(0, 5).map((driverId, pos) => {
+                            const driver = getDriverById(driverId);
+                            return driver ? (
+                              <div key={pos} className="predicted-driver">
+                                <span className="predicted-position">{pos + 1}</span>
+                                {driver.imageUrl && (
+                                  <img 
+                                    src={driver.imageUrl} 
+                                    alt={`${driver.forename} ${driver.surname}`}
+                                    className="predicted-driver-image"
+                                  />
+                                )}
+                                <span className="predicted-driver-name">
+                                  {driver.forename[0]}. {driver.surname}
+                                </span>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 };
