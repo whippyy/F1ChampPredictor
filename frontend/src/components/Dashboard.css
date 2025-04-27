@@ -68,6 +68,27 @@
     transition: transform 0.5s ease;
   }
   
+  .driver-card {
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+    color: white;
+  }
+  
+  .driver-image-container {
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .driver-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  
   .driver-card:hover .driver-image {
     transform: scale(1.05);
   }
@@ -75,13 +96,12 @@
   .driver-placeholder {
     width: 100%;
     height: 100%;
-    background: var(--f1-gray);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 3rem;
     font-weight: bold;
-    color: var(--f1-light);
+    background-color: rgba(0, 0, 0, 0.3);
   }
   
   .team-logo {
@@ -91,7 +111,7 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    border: 2px solid var(--f1-black);
+    border: 2px solid;
     background: white;
     padding: 3px;
   }
@@ -104,13 +124,12 @@
   .driver-info h3 {
     font-size: 1.2rem;
     margin-bottom: 0.25rem;
-    color: var(--f1-light);
+    color: white;
   }
   
   .driver-info p {
     font-size: 0.9rem;
-    color: var(--f1-light);
-    opacity: 0.8;
+    color: rgba(255, 255, 255, 0.8);
   }
   
   .driver-number {
@@ -120,14 +139,23 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--f1-red);
-    color: white;
+    color: black;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     font-size: 1.2rem;
     border: 3px solid var(--f1-black);
+  }
+  
+  /* For teams with light colors that need dark text */
+  .light-team {
+    color: black;
+  }
+  
+  .light-team .driver-info h3,
+  .light-team .driver-info p {
+    color: black;
   }
   
   /* Races Section */
