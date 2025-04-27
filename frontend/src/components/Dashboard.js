@@ -4,27 +4,34 @@ import axios from 'axios';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const [driversWithTeams, setDriversWithTeams] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [races, setRaces] = useState([]);
+  const [circuits, setCircuits] = useState([]);
   const [loading, setLoading] = useState({
     drivers: true,
     teams: true,
-    races: true
+    races: true,
+    circuits: true
   });
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // First fetch all teams
-        const teamsResponse = await axios.get('http://127.0.0.1:8000/teams');
-        const allTeams = teamsResponse.data?.data || [];
-        setTeams(allTeams);
-        setLoading(prev => ({ ...prev, teams: false }));
+        // Fetch all necessary data in parallel
+        const [teamsResponse, racesResponse, circuitsResponse] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/teams'),
+          axios.get('http://127.0.0.1:8000/races?season=2024'),
+          axios.get('http://127.0.0.1:8000/circuits')
+        ]);
 
-        // Then fetch drivers for each team
-        const driversPromises = allTeams.map(team => 
+        setTeams(teamsResponse.data?.data || []);
+        setRaces(racesResponse.data?.data || []);
+        setCircuits(circuitsResponse.data?.data || []);
+
+        // Now fetch drivers for each team
+        const driversPromises = teamsResponse.data.data.map(team => 
           axios.get(`http://127.0.0.1:8000/drivers?team_id=${team.constructorId}`)
         );
 
@@ -32,25 +39,26 @@ const Dashboard = () => {
         
         // Combine drivers with their team info
         const combinedDrivers = [];
-        allTeams.forEach((team, index) => {
+        teamsResponse.data.data.forEach((team, index) => {
           const teamDrivers = driversResponses[index]?.data?.data || [];
           teamDrivers.forEach(driver => {
             combinedDrivers.push({
               ...driver,
               teamId: team.constructorId,
               teamName: team.name,
-              teamRef: team.constructorRef
+              teamRef: team.constructorRef,
+              teamNationality: team.nationality
             });
           });
         });
 
-        setDriversWithTeams(combinedDrivers);
-        setLoading(prev => ({ ...prev, drivers: false }));
-
-        // Fetch races
-        const racesResponse = await axios.get('http://127.0.0.1:8000/races?season=2024');
-        setRaces(racesResponse.data?.data || []);
-        setLoading(prev => ({ ...prev, races: false }));
+        setDrivers(combinedDrivers);
+        setLoading({
+          drivers: false,
+          teams: false,
+          races: false,
+          circuits: false
+        });
 
       } catch (err) {
         setError('Failed to load data. Please try again later.');
@@ -60,6 +68,10 @@ const Dashboard = () => {
 
     fetchData();
   }, []);
+
+  const getCircuitById = (circuitId) => {
+    return circuits.find(circuit => circuit.circuitId === circuitId) || {};
+  };
 
   const getInitials = (name) => {
     if (!name) return 'TR';
@@ -83,7 +95,7 @@ const Dashboard = () => {
     }
   };
 
-  if (loading.drivers || loading.teams || loading.races) {
+  if (loading.drivers || loading.teams || loading.races || loading.circuits) {
     return (
       <div className="loading-container">
         <div className="loading-spinner" />
@@ -123,7 +135,7 @@ const Dashboard = () => {
       <section className="drivers-section">
         <h2>Drivers Championship</h2>
         <div className="drivers-grid">
-          {driversWithTeams.map((driver, index) => (
+          {drivers.map((driver) => (
             <motion.div 
               key={`${driver.driverId}-${driver.teamId}`}
               className="driver-card"
@@ -163,7 +175,7 @@ const Dashboard = () => {
               <div className="driver-info">
                 <h3>{driver.forename} {driver.surname}</h3>
                 <p>{driver.teamName}</p>
-                <div className="driver-number">{driver.number || index + 1}</div>
+                <div className="driver-number">{driver.number || 'N/A'}</div>
               </div>
             </motion.div>
           ))}
@@ -174,39 +186,45 @@ const Dashboard = () => {
       <section className="races-section">
         <h2>2024 Race Calendar</h2>
         <div className="races-timeline">
-          {races.map((race) => (
-            <motion.div 
-              key={race.raceId}
-              className="race-card"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="race-image-container">
-                {race.circuitImage ? (
-                  <img 
-                    src={race.circuitImage} 
-                    alt={race.circuitName}
-                    className="race-image"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '';
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="race-placeholder">
-                    {getInitials(race.circuitName)}
-                  </div>
-                )}
-              </div>
-              <div className="race-info">
-                <h3>{race.raceName}</h3>
-                <p className="race-circuit">{race.circuitName}</p>
-                <p className="race-date">{formatDate(race.date)}</p>
-                <div className="race-round">Round {race.round}</div>
-              </div>
-            </motion.div>
-          ))}
+          {races.map((race) => {
+            const circuit = getCircuitById(race.circuitId);
+            return (
+              <motion.div 
+                key={race.raceId}
+                className="race-card"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="race-image-container">
+                  {circuit.imageUrl ? (
+                    <img 
+                      src={circuit.imageUrl} 
+                      alt={circuit.name}
+                      className="race-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '';
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="race-placeholder">
+                      {getInitials(circuit.name)}
+                    </div>
+                  )}
+                </div>
+                <div className="race-info">
+                  <h3>{race.name}</h3>
+                  <p className="race-circuit">
+                    {circuit.name || 'Circuit not specified'}
+                    {circuit.location && `, ${circuit.location}`}
+                  </p>
+                  <p className="race-date">{formatDate(race.date)}</p>
+                  <div className="race-round">Round {race.round}</div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
     </motion.div>
