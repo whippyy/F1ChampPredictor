@@ -9,8 +9,8 @@
   margin-bottom: 2rem;
 }
 
-.predictions-header h2 {
-  font-size: 2rem;
+.predictions-header h1 {
+  font-size: 2.5rem;
   margin-bottom: 0.5rem;
   background: linear-gradient(to right, var(--f1-red), var(--f1-accent));
   -webkit-background-clip: text;
@@ -23,10 +23,119 @@
   opacity: 0.8;
 }
 
-.positions-grid {
+/* Tracks Selection */
+.tracks-selection {
+  margin-top: 2rem;
+}
+
+.tracks-selection h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: var(--f1-light);
+  border-bottom: 2px solid var(--f1-red);
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.track-card {
+  background: rgba(30, 30, 30, 0.7);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(225, 6, 0, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.track-card:hover {
+  border-color: var(--f1-red);
+  transform: translateY(-5px);
+}
+
+.track-image-container {
+  height: 150px;
+  position: relative;
+}
+
+.track-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.track-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--f1-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--f1-light);
+}
+
+.track-info {
+  padding: 1rem;
+}
+
+.track-info h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: var(--f1-light);
+}
+
+.track-info p {
+  font-size: 0.9rem;
+  color: var(--f1-light);
+  opacity: 0.8;
+  margin-bottom: 0.25rem;
+}
+
+.track-date {
+  color: var(--f1-accent) !important;
+}
+
+/* Prediction Interface */
+.selected-track {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.selected-track h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  color: var(--f1-light);
+}
+
+.selected-track p {
+  color: var(--f1-light);
+  opacity: 0.8;
+}
+
+.btn-back {
+  background: transparent;
+  color: var(--f1-light);
+  border: none;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-back:hover {
+  color: var(--f1-red);
+}
+
+.prediction-positions {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .position-card {
@@ -34,11 +143,6 @@
   border-radius: 8px;
   padding: 1.5rem;
   border: 1px solid rgba(225, 6, 0, 0.2);
-  transition: all 0.3s ease;
-}
-
-.position-card:hover {
-  border-color: rgba(225, 6, 0, 0.4);
 }
 
 .position-header {
@@ -61,13 +165,13 @@
   font-size: 1.2rem;
 }
 
-.drivers-grid {
+.drivers-selection {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1rem;
 }
 
-.driver-card {
+.driver-option {
   background: rgba(42, 42, 42, 0.8);
   border-radius: 6px;
   padding: 1rem;
@@ -76,12 +180,12 @@
   border: 1px solid transparent;
 }
 
-.driver-card.selected {
+.driver-option.selected {
   background: rgba(225, 6, 0, 0.1);
   border-color: var(--f1-red);
 }
 
-.driver-card:hover {
+.driver-option:hover {
   background: rgba(42, 42, 42, 1);
 }
 
@@ -125,6 +229,7 @@
 .driver-info h4 {
   font-size: 1rem;
   margin-bottom: 0.25rem;
+  color: var(--f1-light);
 }
 
 .driver-info p {
@@ -133,39 +238,86 @@
   opacity: 0.7;
 }
 
+.prediction-actions {
+  text-align: center;
+  margin: 2rem 0;
+}
+
 .submit-btn {
-  display: block;
-  margin: 2rem auto 0;
   padding: 1rem 2rem;
   font-size: 1rem;
 }
 
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-  gap: 1rem;
+/* Community Predictions */
+.community-predictions {
+  margin-top: 3rem;
 }
 
-.error-container {
-  background: rgba(225, 6, 0, 0.1);
-  border: 1px solid var(--f1-red);
+.community-predictions h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--f1-light);
+  border-bottom: 2px solid var(--f1-red);
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.predictions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.community-prediction {
+  background: rgba(30, 30, 30, 0.7);
   border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  max-width: 500px;
-  margin: 2rem auto;
+  padding: 1rem;
+  border: 1px solid rgba(225, 6, 0, 0.2);
 }
 
-.error-container p {
+.community-prediction h4 {
+  font-size: 1.1rem;
   margin-bottom: 1rem;
+  color: var(--f1-light);
 }
 
+.predicted-drivers {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.predicted-driver {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(42, 42, 42, 0.8);
+  border-radius: 4px;
+}
+
+.predicted-position {
+  font-weight: bold;
+  color: var(--f1-red);
+  min-width: 20px;
+}
+
+.predicted-driver-image {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.predicted-driver-name {
+  font-size: 0.9rem;
+  color: var(--f1-light);
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-  .drivers-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  .tracks-grid, .drivers-selection, .predictions-grid {
+    grid-template-columns: 1fr;
   }
   
   .predictions-container {
