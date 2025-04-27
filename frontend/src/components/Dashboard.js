@@ -30,6 +30,10 @@ const Dashboard = () => {
     circuits: true
   });
   const [error, setError] = useState(null);
+  
+  const getTeamColor = (teamRef) => {
+    return TEAM_COLORS[teamRef] || '#333333'; // Default dark gray if no color defined
+  };
 
   useEffect(() => {
     const fetchData = async () => {
