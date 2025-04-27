@@ -4,7 +4,7 @@ import axios from 'axios';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const [drivers, setDrivers] = useState([]);
+  const [driversWithTeams, setDriversWithTeams] = useState([]);
   const [teams, setTeams] = useState([]);
   const [races, setRaces] = useState([]);
   const [loading, setLoading] = useState({
@@ -17,21 +17,41 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [driversResponse, teamsResponse, racesResponse] = await Promise.all([
-          axios.get('http://127.0.0.1:8000/drivers?with_images=true'),
-          axios.get('http://127.0.0.1:8000/teams'),
-          axios.get('http://127.0.0.1:8000/races?season=2024')
-        ]);
+        // First fetch all teams
+        const teamsResponse = await axios.get('http://127.0.0.1:8000/teams');
+        const allTeams = teamsResponse.data?.data || [];
+        setTeams(allTeams);
+        setLoading(prev => ({ ...prev, teams: false }));
+
+        // Then fetch drivers for each team
+        const driversPromises = allTeams.map(team => 
+          axios.get(`http://127.0.0.1:8000/drivers?team_id=${team.constructorId}`)
+        );
+
+        const driversResponses = await Promise.all(driversPromises);
         
-        setDrivers(driversResponse.data?.data || []);
-        setTeams(teamsResponse.data?.data || []);
-        setRaces(racesResponse.data?.data || []);
-        
-        setLoading({
-          drivers: false,
-          teams: false,
-          races: false
+        // Combine drivers with their team info
+        const combinedDrivers = [];
+        allTeams.forEach((team, index) => {
+          const teamDrivers = driversResponses[index]?.data?.data || [];
+          teamDrivers.forEach(driver => {
+            combinedDrivers.push({
+              ...driver,
+              teamId: team.constructorId,
+              teamName: team.name,
+              teamRef: team.constructorRef
+            });
+          });
         });
+
+        setDriversWithTeams(combinedDrivers);
+        setLoading(prev => ({ ...prev, drivers: false }));
+
+        // Fetch races
+        const racesResponse = await axios.get('http://127.0.0.1:8000/races?season=2024');
+        setRaces(racesResponse.data?.data || []);
+        setLoading(prev => ({ ...prev, races: false }));
+
       } catch (err) {
         setError('Failed to load data. Please try again later.');
         console.error('Error fetching data:', err);
@@ -40,10 +60,6 @@ const Dashboard = () => {
 
     fetchData();
   }, []);
-
-  const getTeamById = (teamId) => {
-    return teams.find(team => team.constructorId === teamId) || { name: 'Team not specified' };
-  };
 
   const getInitials = (name) => {
     if (!name) return 'TR';
@@ -107,53 +123,50 @@ const Dashboard = () => {
       <section className="drivers-section">
         <h2>Drivers Championship</h2>
         <div className="drivers-grid">
-          {drivers.map((driver, index) => {
-            const driverTeam = getTeamById(driver.teamId);
-            return (
-              <motion.div 
-                key={driver.driverId || index}
-                className="driver-card"
-                whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="driver-image-container">
-                  {driver.imageUrl ? (
-                    <img 
-                      src={driver.imageUrl} 
-                      alt={`${driver.forename || ''} ${driver.surname || ''}`}
-                      className="driver-image"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '';
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="driver-placeholder">
-                      {getInitials(`${driver.forename} ${driver.surname}`)}
-                    </div>
-                  )}
-                  {driverTeam && (
-                    <img 
-                      src={`/team-logos/${driverTeam.constructorRef}.png`} 
-                      alt={driverTeam.name} 
-                      className="team-logo"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '';
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
-                </div>
-                <div className="driver-info">
-                  <h3>{driver.forename || 'First'} {driver.surname || 'Last'}</h3>
-                  <p>{driverTeam.name}</p>
-                  <div className="driver-number">{index + 1}</div>
-                </div>
-              </motion.div>
-            );
-          })}
+          {driversWithTeams.map((driver, index) => (
+            <motion.div 
+              key={`${driver.driverId}-${driver.teamId}`}
+              className="driver-card"
+              whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="driver-image-container">
+                {driver.imageUrl ? (
+                  <img 
+                    src={driver.imageUrl} 
+                    alt={`${driver.forename} ${driver.surname}`}
+                    className="driver-image"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '';
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="driver-placeholder">
+                    {getInitials(`${driver.forename} ${driver.surname}`)}
+                  </div>
+                )}
+                {driver.teamRef && (
+                  <img 
+                    src={`/team-logos/${driver.teamRef}.png`} 
+                    alt={driver.teamName}
+                    className="team-logo"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '';
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                )}
+              </div>
+              <div className="driver-info">
+                <h3>{driver.forename} {driver.surname}</h3>
+                <p>{driver.teamName}</p>
+                <div className="driver-number">{driver.number || index + 1}</div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
@@ -172,7 +185,7 @@ const Dashboard = () => {
                 {race.circuitImage ? (
                   <img 
                     src={race.circuitImage} 
-                    alt={race.circuitName || 'Race circuit'}
+                    alt={race.circuitName}
                     className="race-image"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -187,10 +200,10 @@ const Dashboard = () => {
                 )}
               </div>
               <div className="race-info">
-                <h3>{race.raceName || 'Race name not available'}</h3>
-                <p className="race-circuit">{race.circuitName || 'Circuit not specified'}</p>
+                <h3>{race.raceName}</h3>
+                <p className="race-circuit">{race.circuitName}</p>
                 <p className="race-date">{formatDate(race.date)}</p>
-                <div className="race-round">Round {race.round || 'N/A'}</div>
+                <div className="race-round">Round {race.round}</div>
               </div>
             </motion.div>
           ))}
