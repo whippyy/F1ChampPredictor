@@ -3,6 +3,21 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import './Dashboard.css';
 
+// Team color mapping - adjust these to match actual F1 team colors
+const TEAM_COLORS = {
+  mclaren: '#FF8000', // McLaren orange
+  mercedes: '#00D2BE', // Mercedes teal
+  red_bull: '#0600EF', // Red Bull blue
+  ferrari: '#DC0000', // Ferrari red
+  alpine: '#0090FF', // Alpine blue
+  aston_martin: '#006F62', // Aston Martin green
+  williams: '#005AFF', // Williams blue
+  haas: '#FFFFFF', // Haas white
+  rb: '#6692FF', // RB blue
+  sauber: '#52E252', // Sauber green
+  // Add more teams as needed
+};
+
 const Dashboard = () => {
   const [drivers, setDrivers] = useState([]);
   const [teams, setTeams] = useState([]);
