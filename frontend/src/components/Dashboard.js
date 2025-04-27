@@ -5,30 +5,45 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const [drivers, setDrivers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [races, setRaces] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    drivers: true,
+    teams: true,
+    races: true
+  });
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [driversResponse, racesResponse] = await Promise.all([
+        const [driversResponse, teamsResponse, racesResponse] = await Promise.all([
           axios.get('http://127.0.0.1:8000/drivers?with_images=true'),
+          axios.get('http://127.0.0.1:8000/teams'),
           axios.get('http://127.0.0.1:8000/races?season=2024')
         ]);
         
         setDrivers(driversResponse.data?.data || []);
+        setTeams(teamsResponse.data?.data || []);
         setRaces(racesResponse.data?.data || []);
+        
+        setLoading({
+          drivers: false,
+          teams: false,
+          races: false
+        });
       } catch (err) {
         setError('Failed to load data. Please try again later.');
         console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
+
+  const getTeamById = (teamId) => {
+    return teams.find(team => team.constructorId === teamId) || { name: 'Team not specified' };
+  };
 
   const getInitials = (name) => {
     if (!name) return 'TR';
@@ -52,7 +67,7 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) {
+  if (loading.drivers || loading.teams || loading.races) {
     return (
       <div className="loading-container">
         <div className="loading-spinner" />
@@ -92,50 +107,53 @@ const Dashboard = () => {
       <section className="drivers-section">
         <h2>Drivers Championship</h2>
         <div className="drivers-grid">
-          {drivers.map((driver, index) => (
-            <motion.div 
-              key={driver.driverId || index}
-              className="driver-card"
-              whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="driver-image-container">
-                {driver.imageUrl ? (
-                  <img 
-                    src={driver.imageUrl} 
-                    alt={`${driver.forename || ''} ${driver.surname || ''}`}
-                    className="driver-image"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '';
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="driver-placeholder">
-                    {getInitials(`${driver.forename} ${driver.surname}`)}
-                  </div>
-                )}
-                {driver.teamLogo && (
-                  <img 
-                    src={driver.teamLogo} 
-                    alt={driver.team || 'Team logo'} 
-                    className="team-logo"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '';
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                )}
-              </div>
-              <div className="driver-info">
-                <h3>{driver.forename || 'First'} {driver.surname || 'Last'}</h3>
-                <p>{driver.team || 'Team not specified'}</p>
-                <div className="driver-number">{index + 1}</div>
-              </div>
-            </motion.div>
-          ))}
+          {drivers.map((driver, index) => {
+            const driverTeam = getTeamById(driver.teamId);
+            return (
+              <motion.div 
+                key={driver.driverId || index}
+                className="driver-card"
+                whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="driver-image-container">
+                  {driver.imageUrl ? (
+                    <img 
+                      src={driver.imageUrl} 
+                      alt={`${driver.forename || ''} ${driver.surname || ''}`}
+                      className="driver-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '';
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="driver-placeholder">
+                      {getInitials(`${driver.forename} ${driver.surname}`)}
+                    </div>
+                  )}
+                  {driverTeam && (
+                    <img 
+                      src={`/team-logos/${driverTeam.constructorRef}.png`} 
+                      alt={driverTeam.name} 
+                      className="team-logo"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '';
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
+                </div>
+                <div className="driver-info">
+                  <h3>{driver.forename || 'First'} {driver.surname || 'Last'}</h3>
+                  <p>{driverTeam.name}</p>
+                  <div className="driver-number">{index + 1}</div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
