@@ -219,6 +219,7 @@ const Dashboard = () => {
 
 
       {/* Races Timeline */}
+      {/* 2024 Race Calendar Section */}
       <section className="races-section">
         <h2>2024 Race Calendar</h2>
         <div className="races-timeline">
@@ -228,8 +229,11 @@ const Dashboard = () => {
               <motion.div 
                 key={race.raceId}
                 className="race-card"
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2 }}
+                whileHover={{ 
+                  y: -3, 
+                  boxShadow: '0 8px 16px rgba(255, 255, 255, 0.2)'
+                }}
+                transition={{ duration: 0.3 }}
               >
                 <div className="race-image-container">
                   {circuit.imageUrl ? (
@@ -239,7 +243,6 @@ const Dashboard = () => {
                       className="race-image"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = '';
                         e.target.style.display = 'none';
                       }}
                     />
@@ -256,7 +259,9 @@ const Dashboard = () => {
                     {circuit.location && `, ${circuit.location}`}
                   </p>
                   <p className="race-date">{formatDate(race.date)}</p>
-                  <div className="race-round">Round {race.round}</div>
+                  <div className="race-round">
+                    Round {race.round}
+                  </div>
                 </div>
               </motion.div>
             );
