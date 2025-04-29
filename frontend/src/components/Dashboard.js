@@ -151,10 +151,11 @@ const Dashboard = () => {
       </div>
 
       {/* Drivers Grid */}
+      {/* Drivers Championship Section */}
       <section className="drivers-section">
-        <h2>Drivers Championship</h2>
+        <h2>Drivers Championship 2024</h2>
         <div className="drivers-grid">
-          {drivers.map((driver) => {
+          {drivers.map((driver, index) => {
             const teamColor = getTeamColor(driver.teamRef);
             return (
               <motion.div 
@@ -165,8 +166,8 @@ const Dashboard = () => {
                   borderTop: `3px solid ${teamColor}`
                 }}
                 whileHover={{ 
-                  y: -5, 
-                  boxShadow: `0 10px 20px ${teamColor}33`
+                  y: -3, 
+                  boxShadow: `0 8px 16px ${teamColor}44`
                 }}
                 transition={{ duration: 0.3 }}
               >
@@ -178,7 +179,6 @@ const Dashboard = () => {
                       className="driver-image"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = '';
                         e.target.style.display = 'none';
                       }}
                     />
@@ -195,7 +195,6 @@ const Dashboard = () => {
                       style={{ borderColor: teamColor }}
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = '';
                         e.target.style.display = 'none';
                       }}
                     />
@@ -204,11 +203,11 @@ const Dashboard = () => {
                 <div className="driver-info">
                   <h3>{driver.forename} {driver.surname}</h3>
                   <p>{driver.teamName}</p>
-                  <div 
-                    className="driver-number"
-                    style={{ backgroundColor: teamColor }}
-                  >
-                    {driver.number || 'N/A'}
+                  <div className="driver-number" style={{ backgroundColor: teamColor }}>
+                    #{driver.number || 'N/A'}
+                  </div>
+                  <div className="prediction-rank">
+                    Championship Pos: {index + 1}
                   </div>
                 </div>
               </motion.div>
@@ -216,6 +215,7 @@ const Dashboard = () => {
           })}
         </div>
       </section>
+
 
 
       {/* Races Timeline */}
