@@ -1,271 +1,204 @@
+:root {
+  --bg-dark: #121212;
+  --bg-card: #1e1e1e;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --accent: #ff4d4d;
+  --accent-light: #ff9999;
+  --border-soft: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Dashboard Container */
 .dashboard-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-  
-  .dashboard-header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-  
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header */
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.dashboard-header h1 {
+  font-size: 2.8rem;
+  background: linear-gradient(to right, var(--accent), var(--accent-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.dashboard-header p {
+  margin-top: 0.5rem;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+/* Section Titles */
+.drivers-section h2,
+.races-section h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 0.5rem;
+}
+
+/* Grid Layouts */
+.drivers-grid,
+.races-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+/* Card Styles */
+.driver-card,
+.race-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.driver-card:hover,
+.race-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Image Containers */
+.driver-image-container,
+.race-image-container {
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+}
+
+.driver-image,
+.race-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.driver-card:hover .driver-image,
+.race-card:hover .race-image {
+  transform: scale(1.05);
+}
+
+/* Driver Placeholder */
+.driver-placeholder,
+.race-placeholder {
+  background: var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 2rem;
+  height: 100%;
+}
+
+/* Info Sections */
+.driver-info,
+.race-info {
+  padding: 1.5rem;
+}
+
+.driver-info h3,
+.race-info h3 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.driver-info p,
+.race-circuit,
+.race-date {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* Team Logo and Driver Number */
+.team-logo,
+.driver-number {
+  position: absolute;
+}
+
+.team-logo {
+  bottom: 12px;
+  right: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  padding: 3px;
+  border: 1px solid var(--border-soft);
+}
+
+.driver-number {
+  top: 12px;
+  right: 12px;
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: black;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Race Round */
+.race-round {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--accent);
+  color: black;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
   .dashboard-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    background: linear-gradient(to right, var(--f1-red), var(--f1-accent));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-size: 2.2rem;
   }
-  
-  .dashboard-header p {
-    color: var(--f1-light);
-    opacity: 0.8;
-    font-size: 1.1rem;
-  }
-  
-  /* Drivers Section */
-  .drivers-section {
-    margin-bottom: 4rem;
-  }
-  
-  .drivers-section h2 {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    color: var(--f1-light);
-    border-bottom: 2px solid var(--f1-red);
-    padding-bottom: 0.5rem;
-    display: inline-block;
-  }
-  
-  .drivers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  .driver-card {
-    background: rgba(30, 30, 30, 0.7);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid rgba(225, 6, 0, 0.2);
-    transition: all 0.3s ease;
-    position: relative;
-  }
-  
-  .driver-image-container {
-    height: 200px;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .driver-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-  }
-  
-  .driver-card {
-    border-radius: 8px;
-    overflow: hidden;
-    position: relative;
-    transition: all 0.3s ease;
-    color: white;
-  }
-  
-  .driver-image-container {
-    height: 200px;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .driver-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-  }
-  
-  .driver-card:hover .driver-image {
-    transform: scale(1.05);
-  }
-  
-  .driver-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    font-weight: bold;
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-  
-  .team-logo {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 2px solid;
-    background: white;
-    padding: 3px;
-  }
-  
-  .driver-info {
-    padding: 1rem;
-    position: relative;
-  }
-  
-  .driver-info h3 {
-    font-size: 1.2rem;
-    margin-bottom: 0.25rem;
-    color: white;
-  }
-  
-  .driver-info p {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .driver-number {
-    position: absolute;
-    top: -25px;
-    right: 15px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    color: black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.2rem;
-    border: 3px solid var(--f1-black);
-  }
-  
-  /* For teams with light colors that need dark text */
-  .light-team {
-    color: black;
-  }
-  
-  .light-team .driver-info h3,
-  .light-team .driver-info p {
-    color: black;
-  }
-  
-  /* Races Section */
-  .races-section h2 {
-    font-size: 1.8rem;
-    margin-bottom: 1.5rem;
-    color: var(--f1-light);
-    border-bottom: 2px solid var(--f1-red);
-    padding-bottom: 0.5rem;
-    display: inline-block;
-  }
-  
+
+  .drivers-grid,
   .races-timeline {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   }
-  
-  .race-card {
-    background: rgba(30, 30, 30, 0.7);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid rgba(225, 6, 0, 0.2);
-    transition: all 0.3s ease;
-  }
-  
-  .race-image-container {
-    height: 150px;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .race-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .race-placeholder {
-    width: 100%;
-    height: 100%;
-    background: var(--f1-gray);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    font-weight: bold;
-    color: var(--f1-light);
-  }
-  
-  .race-info {
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
     padding: 1rem;
   }
-  
-  .race-info h3 {
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-    color: var(--f1-light);
+
+  .drivers-grid,
+  .races-timeline {
+    grid-template-columns: 1fr;
   }
-  
-  .race-circuit {
-    font-size: 0.9rem;
-    color: var(--f1-accent);
-    margin-bottom: 0.5rem;
+
+  .driver-image-container,
+  .race-image-container {
+    height: 180px;
   }
-  
-  .race-date {
-    font-size: 0.9rem;
-    color: var(--f1-light);
-    opacity: 0.8;
-    margin-bottom: 0.5rem;
-  }
-  
-  .race-round {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: var(--f1-black);
-    color: var(--f1-red);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: bold;
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .dashboard-header h1 {
-      font-size: 2rem;
-    }
-    
-    .drivers-grid {
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    }
-    
-    .races-timeline {
-      grid-template-columns: 1fr;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .dashboard-container {
-      padding: 1rem;
-    }
-    
-    .drivers-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .driver-image-container {
-      height: 150px;
-    }
-  }
+}
