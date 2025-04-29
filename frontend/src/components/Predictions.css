@@ -16,11 +16,13 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  font-weight: 800;
 }
 
 .predictions-header p {
   color: var(--f1-light);
-  opacity: 0.8;
+  opacity: 0.7;
+  font-size: 1rem;
 }
 
 /* Tracks Selection */
@@ -35,31 +37,33 @@
   border-bottom: 2px solid var(--f1-red);
   padding-bottom: 0.5rem;
   display: inline-block;
+  font-weight: 700;
 }
 
 .tracks-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
 
 .track-card {
-  background: rgba(30, 30, 30, 0.7);
-  border-radius: 8px;
+  background: var(--f1-dark);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(225, 6, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .track-card:hover {
   border-color: var(--f1-red);
-  transform: translateY(-5px);
+  transform: translateY(-4px);
 }
 
 .track-image-container {
   height: 150px;
-  position: relative;
+  overflow: hidden;
 }
 
 .track-image {
@@ -69,15 +73,13 @@
 }
 
 .track-placeholder {
-  width: 100%;
-  height: 100%;
   background: var(--f1-gray);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  font-weight: bold;
   color: var(--f1-light);
+  font-size: 1.8rem;
+  font-weight: bold;
 }
 
 .track-info {
@@ -88,17 +90,17 @@
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
   color: var(--f1-light);
+  font-weight: 600;
 }
 
 .track-info p {
   font-size: 0.9rem;
   color: var(--f1-light);
-  opacity: 0.8;
-  margin-bottom: 0.25rem;
+  opacity: 0.7;
 }
 
 .track-date {
-  color: var(--f1-accent) !important;
+  color: var(--f1-accent);
 }
 
 /* Prediction Interface */
@@ -111,20 +113,22 @@
   font-size: 1.8rem;
   margin-bottom: 0.5rem;
   color: var(--f1-light);
+  font-weight: 700;
 }
 
 .selected-track p {
   color: var(--f1-light);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .btn-back {
-  background: transparent;
+  background: none;
   color: var(--f1-light);
   border: none;
   margin-bottom: 1rem;
   cursor: pointer;
   font-size: 0.9rem;
+  transition: color 0.3s ease;
 }
 
 .btn-back:hover {
@@ -135,14 +139,14 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
-  margin-bottom: 2rem;
 }
 
 .position-card {
-  background: rgba(30, 30, 30, 0.7);
-  border-radius: 8px;
+  background: var(--f1-dark);
+  border-radius: 16px;
   padding: 1.5rem;
-  border: 1px solid rgba(225, 6, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .position-header {
@@ -162,7 +166,7 @@
   background: var(--f1-red);
   color: white;
   font-weight: bold;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .drivers-selection {
@@ -172,8 +176,8 @@
 }
 
 .driver-option {
-  background: rgba(42, 42, 42, 0.8);
-  border-radius: 6px;
+  background: var(--f1-gray);
+  border-radius: 12px;
   padding: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -181,12 +185,12 @@
 }
 
 .driver-option.selected {
-  background: rgba(225, 6, 0, 0.1);
+  background: rgba(225, 6, 0, 0.2);
   border-color: var(--f1-red);
 }
 
 .driver-option:hover {
-  background: rgba(42, 42, 42, 1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .driver-image-container {
@@ -198,14 +202,14 @@
   width: 100%;
   height: 120px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .driver-placeholder {
   width: 100%;
   height: 120px;
   background: var(--f1-gray);
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,21 +225,22 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid var(--f1-black);
   background: white;
-  padding: 2px;
+  padding: 3px;
+  border: 2px solid var(--f1-black);
 }
 
 .driver-info h4 {
   font-size: 1rem;
   margin-bottom: 0.25rem;
   color: var(--f1-light);
+  font-weight: 600;
 }
 
 .driver-info p {
   font-size: 0.8rem;
   color: var(--f1-light);
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .prediction-actions {
@@ -245,7 +250,18 @@
 
 .submit-btn {
   padding: 1rem 2rem;
+  background: var(--f1-red);
+  color: white;
   font-size: 1rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: var(--f1-accent);
 }
 
 /* Community Predictions */
@@ -254,31 +270,34 @@
 }
 
 .community-predictions h3 {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   margin-bottom: 1.5rem;
   color: var(--f1-light);
   border-bottom: 2px solid var(--f1-red);
   padding-bottom: 0.5rem;
   display: inline-block;
+  font-weight: 700;
 }
 
 .predictions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
 
 .community-prediction {
-  background: rgba(30, 30, 30, 0.7);
-  border-radius: 8px;
+  background: var(--f1-dark);
+  border-radius: 16px;
   padding: 1rem;
-  border: 1px solid rgba(225, 6, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .community-prediction h4 {
   font-size: 1.1rem;
   margin-bottom: 1rem;
   color: var(--f1-light);
+  font-weight: 600;
 }
 
 .predicted-drivers {
@@ -292,14 +311,14 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: rgba(42, 42, 42, 0.8);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
 .predicted-position {
   font-weight: bold;
   color: var(--f1-red);
-  min-width: 20px;
+  min-width: 24px;
 }
 
 .predicted-driver-image {
@@ -314,12 +333,14 @@
   color: var(--f1-light);
 }
 
-/* Responsive Design */
+/* Responsive */
 @media (max-width: 768px) {
-  .tracks-grid, .drivers-selection, .predictions-grid {
+  .tracks-grid,
+  .drivers-selection,
+  .predictions-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .predictions-container {
     padding: 1rem;
   }
