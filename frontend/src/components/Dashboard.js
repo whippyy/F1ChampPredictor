@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import './Dashboard.css';
-import f1Logo from './f1-logo.png'; // Make sure to add this image
 
 const TEAM_COLORS = {
   mclaren: '#FF8000',
@@ -134,7 +133,6 @@ const Dashboard = () => {
     <div className="dashboard-container">
       {/* Header with F1 logo */}
       <div className="dashboard-header">
-        <img src={f1Logo} alt="F1 Logo" className="f1-logo" />
         <div className="dashboard-header-text">
           <h1>2024 Drivers</h1>
           <p>Dashboard Predictions Points</p>
