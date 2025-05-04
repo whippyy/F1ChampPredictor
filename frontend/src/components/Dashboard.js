@@ -143,8 +143,12 @@ const Dashboard = () => {
       <section className="drivers-section">
         <h2 className="section-title">Drivers Championship</h2>
         <div className="drivers-grid">
+        // Dashboard.js (updated driver card section)
           {drivers.map((driver, index) => {
             const teamColor = getTeamColor(driver.teamRef);
+            // Generate F1 CDN image URL (lowercase last name)
+            const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_600/content/dam/fom-website/drivers/2025Drivers/${driver.surname.toLowerCase()}.jpg`;
+            
             return (
               <motion.div 
                 key={`${driver.driverId}-${driver.teamId}`}
@@ -156,21 +160,16 @@ const Dashboard = () => {
                 transition={{ duration: 0.3 }}
               >
                 <div className="driver-image-container">
-                  {driver.imageUrl ? (
-                    <img 
-                      src={driver.imageUrl} 
-                      alt={`${driver.forename} ${driver.surname}`}
-                      className="driver-image"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="driver-placeholder">
-                      {getInitials(`${driver.forename} ${driver.surname}`)}
-                    </div>
-                  )}
+                  <img 
+                    src={driverImageUrl}
+                    alt={`${driver.forename} ${driver.surname}`}
+                    className="driver-image"
+                    onError={(e) => {
+                      // Fallback if official image fails
+                      e.target.onerror = null;
+                      e.target.src = `https://via.placeholder.com/300x200/333333/FFFFFF?text=${driver.forename[0]}${driver.surname[0]}`;
+                    }}
+                  />
                   {driver.teamRef && (
                     <img 
                       src={`/team-logos/${driver.teamRef}.png`} 
