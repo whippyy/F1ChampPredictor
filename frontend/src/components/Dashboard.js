@@ -143,58 +143,60 @@ const Dashboard = () => {
       <section className="drivers-section">
         <h2 className="section-title">Drivers Championship</h2>
         <div className="drivers-grid">
-        // Dashboard.js (updated driver card section)
-          {drivers.map((driver, index) => {
-            const teamColor = getTeamColor(driver.teamRef);
-            // Generate F1 CDN image URL (lowercase last name)
-            const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_600/content/dam/fom-website/drivers/2025Drivers/${driver.surname.toLowerCase()}.jpg`;
-            
-            return (
-              <motion.div 
-                key={`${driver.driverId}-${driver.teamId}`}
-                className="driver-card"
-                style={{
-                  borderLeft: `4px solid ${teamColor}`
-                }}
-                whileHover={{ y: -5 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="driver-image-container">
-                  <img 
-                    src={driverImageUrl}
-                    alt={`${driver.forename} ${driver.surname}`}
-                    className="driver-image"
-                    onError={(e) => {
-                      // Fallback if official image fails
-                      e.target.onerror = null;
-                      e.target.src = `https://via.placeholder.com/300x200/333333/FFFFFF?text=${driver.forename[0]}${driver.surname[0]}`;
-                    }}
-                  />
-                  {driver.teamRef && (
-                    <img 
-                      src={`/team-logos/${driver.teamRef}.png`} 
-                      alt={driver.teamName}
-                      className="team-logo"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  <div className="driver-number" style={{ backgroundColor: teamColor }}>
-                    #{driver.number || 'N/A'}
-                  </div>
+        {drivers.map((driver) => {
+          const teamColor = getTeamColor(driver.teamRef);
+          const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_1200/content/dam/fom-website/drivers/2025Drivers/${driver.surname.toLowerCase()}.jpg`;
+
+          return (
+            <motion.div 
+              key={driver.driverId}
+              className="driver-card"
+              style={{ borderLeftColor: teamColor }}
+              whileHover={{ 
+                scale: 1.02,
+                boxShadow: `0 8px 24px ${teamColor}40`
+              }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Image Container */}
+              <div className="driver-image-container">
+                <img 
+                  src={driverImageUrl}
+                  alt={`${driver.forename} ${driver.surname}`}
+                  className="driver-image"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://via.placeholder.com/600x400/1e1e1e/ffffff?text=${driver.forename[0]}${driver.surname[0]}`;
+                  }}
+                />
+              </div>
+
+              {/* Overlay Text */}
+              <div className="driver-info">
+                <h3>{driver.forename} {driver.surname}</h3>
+                <p>{driver.teamName}</p>
+                <div className="prediction-points">
+                  {driver.points || 0} PTS
                 </div>
-                <div className="driver-info">
-                  <h3>{driver.forename} {driver.surname}</h3>
-                  <p>{driver.teamName}</p>
-                  <div className="prediction-points">
-                    Points: {driver.points || 0}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+              </div>
+
+              {/* Team Logo & Number */}
+              <div className="driver-number" style={{ backgroundColor: teamColor }}>
+                #{driver.number || 'N/A'}
+              </div>
+              
+              {driver.teamRef && (
+                <img 
+                  src={`/team-logos/${driver.teamRef}.png`}
+                  alt={driver.teamName}
+                  className="team-logo"
+                  style={{ borderColor: teamColor }}
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+              )}
+            </motion.div>
+          );
+        })}
         </div>
       </section>
 
