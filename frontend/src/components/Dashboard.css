@@ -77,82 +77,63 @@ body {
 }
 
 /* Card Styles */
-.driver-card,
-.race-card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: transform 0.3s ease;
-}
-
-.driver-card:hover,
-.race-card:hover {
-  transform: translateY(-5px);
-}
-
-/* Image Containers */
-.driver-image-container,
-.race-image-container {
-  height: 200px;
-  overflow: hidden;
+// Update your Dashboard.css first
+.driver-card {
   position: relative;
+  height: 300px; /* Fixed height */
+  overflow: hidden;
+  border-radius: 12px;
+  border-left: 4px solid var(--accent); /* Keep team color accent */
 }
 
-.driver-image,
-.race-image {
+.driver-image-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.driver-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
+  transition: transform 0.3s ease;
 }
 
-.driver-card:hover .driver-image,
-.race-card:hover .race-image {
-  transform: scale(1.05);
+.driver-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+  padding: 1.5rem;
+  color: white;
 }
 
-/* Placeholders */
-.driver-placeholder,
-.race-placeholder {
-  background: var(--border-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  font-size: 2rem;
-  height: 100%;
-}
-
-/* Info Sections */
-.driver-info,
-.race-info {
-  padding: 1.25rem;
-}
-
-.driver-info h3,
-.race-info h3 {
-  font-size: 1.25rem;
+.driver-info h3 {
+  font-size: 1.5rem;
   margin: 0 0 0.25rem 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-.driver-info p,
-.race-info p {
+.driver-info p {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+  opacity: 0.9;
 }
 
-/* Team Logo and Driver Number */
+.driver-number {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  /* Rest of your number styles */
+}
+
 .team-logo {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: white;
-  padding: 2px;
-  border: 1px solid var(--border-soft);
+  bottom: 15px;
+  right: 15px;
+  /* Rest of your logo styles */
 }
 
 .driver-number {
