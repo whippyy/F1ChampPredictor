@@ -152,18 +152,21 @@ const Dashboard = () => {
               key={driver.driverId}
               className="driver-card"
               style={{ borderLeftColor: teamColor }}
-              whileHover={{ 
-                scale: 1.02,
-                boxShadow: `0 8px 24px ${teamColor}40`
-              }}
-              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.03 }}
             >
-              {/* Image Container */}
+              {/* Image Container - Now properly filling the card */}
               <div className="driver-image-container">
                 <img 
                   src={driverImageUrl}
                   alt={`${driver.forename} ${driver.surname}`}
                   className="driver-image"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%'
+                  }}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = `https://via.placeholder.com/600x400/1e1e1e/ffffff?text=${driver.forename[0]}${driver.surname[0]}`;
