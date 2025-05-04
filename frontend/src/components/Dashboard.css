@@ -77,12 +77,14 @@ body {
 }
 
 /* Card Styles */
+/* Driver Card - Fixed Version */
 .driver-card {
   position: relative;
-  height: 300px; /* Fixed height */
+  height: 300px;
   overflow: hidden;
   border-radius: 12px;
-  border-left: 4px solid var(--accent); /* Keep team color accent */
+  border-left: 4px solid var(--accent);
+  background: var(--bg-card); /* Fallback if image fails */
 }
 
 .driver-image-container {
@@ -91,13 +93,20 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: 1; /* Ensure image stays behind other elements */
 }
 
 .driver-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+  object-fit: cover; /* This is crucial */
+  object-position: center top; /* Focus on faces */
+  display: block; /* Remove any inline spacing */
+}
+
+/* Remove any conflicting transform rules */
+.driver-image-container:hover .driver-image {
+  transform: none !important;
 }
 
 .driver-info {
