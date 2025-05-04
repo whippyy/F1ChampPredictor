@@ -77,7 +77,6 @@ body {
 }
 
 /* Card Styles */
-// Update your Dashboard.css first
 .driver-card {
   position: relative;
   height: 300px; /* Fixed height */
@@ -106,20 +105,29 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 20%, transparent 100%);
   padding: 1.5rem;
   color: white;
+  backdrop-filter: blur(2px); /* Adds subtle blur effect */
 }
 
 .driver-info h3 {
   font-size: 1.5rem;
   margin: 0 0 0.25rem 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
 .driver-info p {
   margin: 0;
+  font-size: 0.95rem;
   opacity: 0.9;
+}
+
+.prediction-points {
+  margin-top: 0.5rem;
+  font-weight: bold;
+  color: var(--accent);
+  font-size: 1.1rem;
 }
 
 .driver-number {
