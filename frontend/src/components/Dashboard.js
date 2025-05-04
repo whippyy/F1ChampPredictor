@@ -202,30 +202,43 @@ const Dashboard = () => {
       <section className="races-section">
         <h2 className="section-title">Race Calendar</h2>
         <div className="races-timeline">
-        {races.map((race) => {
-          const circuit = getCircuitById(race.circuitId);
-          const circuitImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_600/content/dam/fom-website/2025/${race.circuitId.toLowerCase()}/${race.circuitId.toLowerCase()}.jpg`;
-          
-          return (
-            <motion.div key={race.raceId} className="race-card">
-              <div className="race-image-container">
-                <img 
-                  src={circuitImageUrl}
-                  alt={circuit.name}
-                  className="race-image"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = `https://via.placeholder.com/300x200/333333/FFFFFF?text=${circuit.name.substring(0,2)}`;
-                  }}
-                />
-                <div className="race-round">
-                  Round {race.round}
+          {races.map((race) => {
+            const circuit = getCircuitById(race.circuitId);
+            return (
+              <motion.div 
+                key={race.raceId}
+                className="race-card"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="race-image-container">
+                  {circuit.imageUrl ? (
+                    <img 
+                      src={circuit.imageUrl} 
+                      alt={circuit.name}
+                      className="race-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="race-placeholder">
+                      {getInitials(circuit.name)}
+                    </div>
+                  )}
+                  <div className="race-round">
+                    Round {race.round}
+                  </div>
                 </div>
-              </div>
-              {/* ... rest of your race card code ... */}
-            </motion.div>
-          );
-        })}
+                <div className="race-info">
+                  <h3>{race.name}</h3>
+                  <p>{circuit.name || 'Circuit not specified'}</p>
+                  <p>{formatDate(race.date)}</p>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
     </div>
