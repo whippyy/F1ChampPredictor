@@ -2,20 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import './Dashboard.css';
+import f1Logo from './f1-logo.png'; // Make sure to add this image
 
-// Team color mapping - adjust these to match actual F1 team colors
 const TEAM_COLORS = {
-  mclaren: '#FF8000', // McLaren orange
-  mercedes: '#00D2BE', // Mercedes teal
-  red_bull: '#0600EF', // Red Bull blue
-  ferrari: '#DC0000', // Ferrari red
-  alpine: '#0090FF', // Alpine blue
-  aston_martin: '#006F62', // Aston Martin green
-  williams: '#005AFF', // Williams blue
-  haas: '#FFFFFF', // Haas white
-  rb: '#6692FF', // RB blue
-  sauber: '#52E252', // Sauber green
-  // Add more teams as needed
+  mclaren: '#FF8000',
+  mercedes: '#00D2BE',
+  red_bull: '#0600EF',
+  ferrari: '#DC0000',
+  alpine: '#0090FF',
+  aston_martin: '#006F62',
+  williams: '#005AFF',
+  haas: '#FFFFFF',
+  rb: '#6692FF',
+  sauber: '#52E252',
 };
 
 const Dashboard = () => {
@@ -32,13 +31,12 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   const getTeamColor = (teamRef) => {
-    return TEAM_COLORS[teamRef] || '#333333'; // Default dark gray if no color defined
+    return TEAM_COLORS[teamRef] || '#333333';
   };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch all necessary data in parallel
         const [teamsResponse, racesResponse, circuitsResponse] = await Promise.all([
           axios.get('http://127.0.0.1:8000/teams'),
           axios.get('http://127.0.0.1:8000/races?season=2024'),
@@ -49,14 +47,12 @@ const Dashboard = () => {
         setRaces(racesResponse.data?.data || []);
         setCircuits(circuitsResponse.data?.data || []);
 
-        // Now fetch drivers for each team
         const driversPromises = teamsResponse.data.data.map(team => 
           axios.get(`http://127.0.0.1:8000/drivers?team_id=${team.constructorId}`)
         );
 
         const driversResponses = await Promise.all(driversPromises);
         
-        // Combine drivers with their team info
         const combinedDrivers = [];
         teamsResponse.data.data.forEach((team, index) => {
           const teamDrivers = driversResponses[index]?.data?.data || [];
@@ -116,7 +112,7 @@ const Dashboard = () => {
 
   if (loading.drivers || loading.teams || loading.races || loading.circuits) {
     return (
-      <div className="loading-container">
+      <div className="dashboard-container">
         <div className="loading-spinner" />
         <p>Loading data...</p>
       </div>
@@ -125,12 +121,9 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="error-container">
+      <div className="dashboard-container">
         <p>{error}</p>
-        <button 
-          className="btn btn-primary"
-          onClick={() => window.location.reload()}
-        >
+        <button onClick={() => window.location.reload()}>
           Retry
         </button>
       </div>
@@ -138,22 +131,19 @@ const Dashboard = () => {
   }
 
   return (
-    <motion.div 
-      className="dashboard-container"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Main Title */}
+    <div className="dashboard-container">
+      {/* Header with F1 logo */}
       <div className="dashboard-header">
-        <h1>F1 RACE PREDICTOR 2024</h1>
-        <p>Predict race outcomes and track the 2024 season</p>
+        <img src={f1Logo} alt="F1 Logo" className="f1-logo" />
+        <div className="dashboard-header-text">
+          <h1>2024 Drivers</h1>
+          <p>Dashboard Predictions Points</p>
+        </div>
       </div>
 
-      {/* Drivers Grid */}
-      {/* Drivers Championship Section */}
+      {/* Drivers Section */}
       <section className="drivers-section">
-        <h2>Drivers Championship 2024</h2>
+        <h2 className="section-title">Drivers Championship</h2>
         <div className="drivers-grid">
           {drivers.map((driver, index) => {
             const teamColor = getTeamColor(driver.teamRef);
@@ -162,13 +152,9 @@ const Dashboard = () => {
                 key={`${driver.driverId}-${driver.teamId}`}
                 className="driver-card"
                 style={{
-                  background: `linear-gradient(to bottom, ${teamColor} 30%, #1a1a1a 100%)`,
-                  borderTop: `3px solid ${teamColor}`
+                  borderLeft: `4px solid ${teamColor}`
                 }}
-                whileHover={{ 
-                  y: -3, 
-                  boxShadow: `0 8px 16px ${teamColor}44`
-                }}
+                whileHover={{ y: -5 }}
                 transition={{ duration: 0.3 }}
               >
                 <div className="driver-image-container">
@@ -192,22 +178,21 @@ const Dashboard = () => {
                       src={`/team-logos/${driver.teamRef}.png`} 
                       alt={driver.teamName}
                       className="team-logo"
-                      style={{ borderColor: teamColor }}
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.style.display = 'none';
                       }}
                     />
                   )}
+                  <div className="driver-number" style={{ backgroundColor: teamColor }}>
+                    #{driver.number || 'N/A'}
+                  </div>
                 </div>
                 <div className="driver-info">
                   <h3>{driver.forename} {driver.surname}</h3>
                   <p>{driver.teamName}</p>
-                  <div className="driver-number" style={{ backgroundColor: teamColor }}>
-                    #{driver.number || 'N/A'}
-                  </div>
-                  <div className="prediction-rank">
-                    Championship Pos: {index + 1}
+                  <div className="prediction-points">
+                    Points: {driver.points || 0}
                   </div>
                 </div>
               </motion.div>
@@ -216,12 +201,9 @@ const Dashboard = () => {
         </div>
       </section>
 
-
-
-      {/* Races Timeline */}
-      {/* 2024 Race Calendar Section */}
+      {/* Races Section */}
       <section className="races-section">
-        <h2>2024 Race Calendar</h2>
+        <h2 className="section-title">Race Calendar</h2>
         <div className="races-timeline">
           {races.map((race) => {
             const circuit = getCircuitById(race.circuitId);
@@ -229,10 +211,7 @@ const Dashboard = () => {
               <motion.div 
                 key={race.raceId}
                 className="race-card"
-                whileHover={{ 
-                  y: -3, 
-                  boxShadow: '0 8px 16px rgba(255, 255, 255, 0.2)'
-                }}
+                whileHover={{ y: -5 }}
                 transition={{ duration: 0.3 }}
               >
                 <div className="race-image-container">
@@ -251,24 +230,21 @@ const Dashboard = () => {
                       {getInitials(circuit.name)}
                     </div>
                   )}
-                </div>
-                <div className="race-info">
-                  <h3>{race.name}</h3>
-                  <p className="race-circuit">
-                    {circuit.name || 'Circuit not specified'}
-                    {circuit.location && `, ${circuit.location}`}
-                  </p>
-                  <p className="race-date">{formatDate(race.date)}</p>
                   <div className="race-round">
                     Round {race.round}
                   </div>
+                </div>
+                <div className="race-info">
+                  <h3>{race.name}</h3>
+                  <p>{circuit.name || 'Circuit not specified'}</p>
+                  <p>{formatDate(race.date)}</p>
                 </div>
               </motion.div>
             );
           })}
         </div>
       </section>
-    </motion.div>
+    </div>
   );
 };
 
