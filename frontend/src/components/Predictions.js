@@ -53,13 +53,20 @@ const Predictions = () => {
   }, []);
 
   const handleTrackSelect = async (track) => {
+    if (!track || !track.raceId) {
+      setError('Invalid track selected');
+      return;
+    }
+  
     setSelectedTrack(track);
     setLoading(true);
+    
     try {
       const response = await axios.get(`http://127.0.0.1:8000/predictions?raceId=${track.raceId}`);
       setPredictions(response.data?.data || []);
+      setError(null);
     } catch (err) {
-      setError(`Failed to load predictions for ${track.raceName}. Please try again.`);
+      setError(`Failed to load predictions for ${track.raceName || 'this race'}. Please try again.`);
       console.error('Error fetching predictions:', err);
     } finally {
       setLoading(false);
