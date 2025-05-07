@@ -269,6 +269,50 @@ const Predictions = () => {
                   ))}
                 </div>
 
+                <div className="prediction-visualization">
+                <h3>Your Current Prediction</h3>
+                <div className="driver-list">
+                  {userPrediction.slice(0, 5).map((driverId, index) => {
+                    const driver = getDriverById(driverId);
+                    if (!driver) return null;
+                    
+                    const teamColor = TEAM_COLORS[driver.teamRef] || '#333';
+                    
+                    return (
+                      <div key={index} className="driver-row" style={{ borderLeftColor: teamColor }}>
+                        <div className="driver-image-container">
+                          <img 
+                            src={driver.imageUrl} 
+                            alt={`${driver.forename} ${driver.surname}`}
+                            className="driver-image"
+                          />
+                        </div>
+                        
+                        <div className="driver-details">
+                          <div className="driver-name">
+                            {driver.forename} {driver.surname}
+                          </div>
+                          <div className="driver-team">
+                            {driver.teamLogo && (
+                              <img 
+                                src={driver.teamLogo} 
+                                alt={driver.teamName} 
+                                className="team-logo-small"
+                              />
+                            )}
+                            {driver.teamName}
+                          </div>
+                        </div>
+                        
+                        <div className="driver-time">
+                          <span className="position-tag">P{index + 1}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
                 <div className="prediction-actions">
                   <button
                     className="btn btn-primary submit-btn"
