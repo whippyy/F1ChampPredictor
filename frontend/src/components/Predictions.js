@@ -215,6 +215,56 @@ const Predictions = () => {
                           </motion.div>
                         ))}
                       </div>
+
+                      // Add this component inside your prediction-interface section
+                      <div className="driver-list">
+                        {drivers.map((driver) => {
+                          const teamColor = TEAM_COLORS[driver.teamRef] || '#333';
+                          const predictedPosition = userPrediction.findIndex(id => id === driver.driverId) + 1;
+                          
+                          return (
+                            <motion.div 
+                              key={driver.driverId}
+                              className="driver-row"
+                              style={{ borderLeftColor: teamColor }}
+                              whileHover={{ scale: 1.01 }}
+                              onClick={() => handleDriverSelect(predictedPosition > 0 ? predictedPosition : 1)(driver.driverId)}
+                            >
+                              <div className="driver-image-container">
+                                <img 
+                                  src={driver.imageUrl || `https://via.placeholder.com/60/333/fff?text=${driver.forename[0]}${driver.surname[0]}`} 
+                                  alt={`${driver.forename} ${driver.surname}`}
+                                  className="driver-image"
+                                />
+                              </div>
+                              
+                              <div className="driver-details">
+                                <div className="driver-name">
+                                  {driver.forename} {driver.surname}
+                                </div>
+                                <div className="driver-team">
+                                  {driver.teamLogo && (
+                                    <img 
+                                      src={driver.teamLogo} 
+                                      alt={driver.teamName} 
+                                      className="team-logo-small"
+                                    />
+                                  )}
+                                  {driver.teamName}
+                                </div>
+                              </div>
+                              
+                              <div className="driver-time">
+                                {predictedPosition > 0 ? (
+                                  <span className="position-tag">P{predictedPosition}</span>
+                                ) : (
+                                  '--:--.---'
+                                )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
