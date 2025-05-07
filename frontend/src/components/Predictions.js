@@ -3,6 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import './Predictions.css';
 
+const TEAM_COLORS = {
+  mclaren: '#FF8000',
+  mercedes: '#00D2BE',
+  red_bull: '#0600EF',
+  ferrari: '#DC0000',
+  alpine: '#0090FF',
+  aston_martin: '#006F62',
+  williams: '#005AFF',
+  haas: '#FFFFFF',
+  rb: '#6692FF',
+  sauber: '#52E252',
+};
+
 const Predictions = () => {
   const [tracks, setTracks] = useState([]);
   const [selectedTrack, setSelectedTrack] = useState(null);
