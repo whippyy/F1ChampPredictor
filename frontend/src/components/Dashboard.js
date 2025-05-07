@@ -145,7 +145,7 @@ const Dashboard = () => {
         <div className="drivers-grid">
         {drivers.map((driver) => {
           const teamColor = getTeamColor(driver.teamRef);
-          const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_600/content/dam/fom-website/drivers/2025Drivers/${driver.surname.toLowerCase()}.jpg`;
+          const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_600/content/dam/fom-website/drivers/2024Drivers/${driver.surname.toLowerCase()}.jpg`;
 
           return (
             <motion.div 
