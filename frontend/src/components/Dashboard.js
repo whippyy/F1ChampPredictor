@@ -177,44 +177,16 @@ const Dashboard = () => {
                     onError={(e) => e.target.style.display = 'none'}
                   />
                 )}
-          </div>
-
-      {/* Text content BELOW image */}
-      <div className="driver-info">
-        <h3>{driver.forename} {driver.surname}</h3>
-        <p>{driver.teamName}</p>
-        <div className="prediction-points">
-          Points: {driver.points || 0}
-        </div>
-      </div>
-    </motion.div>
-  );
-})}
               </div>
 
-              {/* Overlay Text */}
+              {/* Text content BELOW image */}
               <div className="driver-info">
                 <h3>{driver.forename} {driver.surname}</h3>
                 <p>{driver.teamName}</p>
                 <div className="prediction-points">
-                  {driver.points || 0} PTS
+                  Points: {driver.points || 0}
                 </div>
               </div>
-
-              {/* Team Logo & Number */}
-              <div className="driver-number" style={{ backgroundColor: teamColor }}>
-                #{driver.number || 'N/A'}
-              </div>
-              
-              {driver.teamRef && (
-                <img 
-                  src={`/team-logos/${driver.teamRef}.png`}
-                  alt={driver.teamName}
-                  className="team-logo"
-                  style={{ borderColor: teamColor }}
-                  onError={(e) => e.target.style.display = 'none'}
-                />
-              )}
             </motion.div>
           );
         })}
