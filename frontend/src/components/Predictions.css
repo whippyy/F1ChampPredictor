@@ -184,3 +184,91 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+/* Add these new styles to your existing CSS */
+.driver-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.driver-row {
+  display: flex;
+  align-items: center;
+  background: rgba(30, 30, 30, 0.8);
+  border-radius: 8px;
+  padding: 0.8rem;
+  transition: all 0.3s;
+  border-left: 4px solid var(--f1-red); /* Team color will override */
+}
+
+.driver-row:hover {
+  background: rgba(50, 50, 50, 0.8);
+  transform: translateX(5px);
+}
+
+.driver-image-container {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.driver-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.driver-details {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.driver-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.driver-team {
+  font-size: 0.9rem;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+}
+
+.team-logo-small {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+}
+
+.driver-time {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+/* For the prediction selection interface */
+.prediction-selector {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.position-tag {
+  background: var(--f1-red);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
