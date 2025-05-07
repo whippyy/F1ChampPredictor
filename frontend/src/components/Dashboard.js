@@ -145,33 +145,51 @@ const Dashboard = () => {
         <div className="drivers-grid">
         {drivers.map((driver) => {
           const teamColor = getTeamColor(driver.teamRef);
-          const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_1200/content/dam/fom-website/drivers/2025Drivers/${driver.surname.toLowerCase()}.jpg`;
+          const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_600/content/dam/fom-website/drivers/2025Drivers/${driver.surname.toLowerCase()}.jpg`;
 
           return (
             <motion.div 
               key={driver.driverId}
               className="driver-card"
-              style={{ borderLeftColor: teamColor }}
-              whileHover={{ scale: 1.03 }}
+              style={{ borderTopColor: teamColor }}
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.3 }}
             >
-              {/* Image Container - Now properly filling the card */}
+              {/* Image with logo/number overlays */}
               <div className="driver-image-container">
                 <img 
                   src={driverImageUrl}
                   alt={`${driver.forename} ${driver.surname}`}
                   className="driver-image"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%'
-                  }}
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = `https://via.placeholder.com/600x400/1e1e1e/ffffff?text=${driver.forename[0]}${driver.surname[0]}`;
+                    e.target.src = `https://via.placeholder.com/400x600/1e1e1e/ffffff?text=${driver.forename[0]}${driver.surname[0]}`;
                   }}
                 />
+                <div className="driver-number" style={{ backgroundColor: teamColor }}>
+                  #{driver.number || 'N/A'}
+                </div>
+                {driver.teamRef && (
+                  <img 
+                    src={`/team-logos/${driver.teamRef}.png`}
+                    alt={driver.teamName}
+                    className="team-logo"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                )}
+          </div>
+
+      {/* Text content BELOW image */}
+      <div className="driver-info">
+        <h3>{driver.forename} {driver.surname}</h3>
+        <p>{driver.teamName}</p>
+        <div className="prediction-points">
+          Points: {driver.points || 0}
+        </div>
+      </div>
+    </motion.div>
+  );
+})}
               </div>
 
               {/* Overlay Text */}
