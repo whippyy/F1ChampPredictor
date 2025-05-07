@@ -47,7 +47,6 @@ const Header = () => (
           className="logo"
           whileHover={{ scale: 1.05 }}
         />
-        <h1 className="app-title">F1 INSIGHTS</h1>
       </div>
       
       <nav className="main-nav">
