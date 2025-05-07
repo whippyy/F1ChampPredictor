@@ -77,96 +77,75 @@ body {
 }
 
 /* Card Styles */
-/* Driver Card - Fixed Version */
+/* Driver Card - Rectangular Layout */
 .driver-card {
-  position: relative;
-  height: 300px;
-  overflow: hidden;
+  background: var(--bg-card);
   border-radius: 12px;
-  border-left: 4px solid var(--accent);
-  background: var(--bg-card); /* Fallback if image fails */
+  overflow: hidden;
+  border-top: 4px solid var(--accent); /* Team color on top */
+  display: flex;
+  flex-direction: column;
+  height: auto; /* Remove fixed height */
 }
 
 .driver-image-container {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: 100%;
-  z-index: 1; /* Ensure image stays behind other elements */
+  aspect-ratio: 2/3; /* Vertical rectangle (adjust as needed) */
 }
 
 .driver-image {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* This is crucial */
-  object-position: center top; /* Focus on faces */
-  display: block; /* Remove any inline spacing */
+  object-fit: cover;
+  object-position: top center; /* Focus on driver's face */
 }
 
-/* Remove any conflicting transform rules */
-.driver-image-container:hover .driver-image {
-  transform: none !important;
-}
-
+/* Move ALL text below image */
 .driver-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 20%, transparent 100%);
-  padding: 1.5rem;
-  color: white;
-  backdrop-filter: blur(2px); /* Adds subtle blur effect */
+  padding: 1rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
 }
 
 .driver-info h3 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   margin: 0 0 0.25rem 0;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  color: var(--text-primary);
 }
 
 .driver-info p {
   margin: 0;
-  font-size: 0.95rem;
-  opacity: 0.9;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
-.prediction-points {
-  margin-top: 0.5rem;
-  font-weight: bold;
-  color: var(--accent);
-  font-size: 1.1rem;
-}
-
-.driver-number {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  /* Rest of your number styles */
-}
-
+/* Position team logo and number ON the image */
 .team-logo {
   position: absolute;
-  bottom: 15px;
-  right: 15px;
-  /* Rest of your logo styles */
+  bottom: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: white;
+  padding: 2px;
 }
 
 .driver-number {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 36px;
-  height: 36px;
   background: var(--accent);
   color: black;
-  font-weight: bold;
-  font-size: 1rem;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
 }
 
 /* Race Round */
