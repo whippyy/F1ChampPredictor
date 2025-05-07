@@ -78,57 +78,66 @@ body {
 
 /* Card Styles */
 /* Driver Card - Rectangular Layout */
+/* Driver Card - Rectangular Layout */
 .driver-card {
   background: var(--bg-card);
-  border-radius: 12px;
+  border-radius: 12px; /* Only round the card corners */
   overflow: hidden;
-  border-top: 4px solid var(--accent); /* Team color on top */
+  border-top: 4px solid var(--accent); /* Team color bar */
   display: flex;
   flex-direction: column;
-  height: auto; /* Remove fixed height */
+  height: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
+/* Image container - ensures rectangular shape */
 .driver-image-container {
   position: relative;
   width: 100%;
-  aspect-ratio: 2/3; /* Vertical rectangle (adjust as needed) */
+  aspect-ratio: 3/4; /* Standard portrait ratio (adjust as needed) */
+  overflow: hidden; /* Hide any accidental rounded corners */
 }
 
+/* Force rectangular images */
 .driver-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top center; /* Focus on driver's face */
+  object-position: top center;
+  border-radius: 0 !important; /* Override any oval styles */
+  display: block; /* Remove inline spacing */
 }
 
-/* Move ALL text below image */
+/* Text section below image */
 .driver-info {
-  padding: 1rem;
+  padding: 1.2rem;
   background: var(--bg-card);
-  color: var(--text-primary);
+  flex-grow: 1; /* Takes remaining space */
 }
 
-.driver-info h3 {
-  font-size: 1.25rem;
-  margin: 0 0 0.25rem 0;
-  color: var(--text-primary);
+/* Position badges ON the image */
+.driver-number {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%; /* Only round the number badge */
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
-.driver-info p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-/* Position team logo and number ON the image */
 .team-logo {
   position: absolute;
   bottom: 12px;
   right: 12px;
   width: 40px;
   height: 40px;
+  border-radius: 50%; /* Only round the logo */
   border: 2px solid white;
-  border-radius: 50%;
   background: white;
   padding: 2px;
 }
