@@ -129,8 +129,8 @@ body {
 
 .driver-number {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
+  top: 25px;
+  right: 25px;
   color: white;
   width: 36px;
   height: 36px;
@@ -138,6 +138,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  font-size: 35px;
 }
 
 /* Race Round */
