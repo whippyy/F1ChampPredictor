@@ -173,7 +173,7 @@ const Dashboard = () => {
                   />
                   
                   {/* Badges */}
-                  <div className="driver-number" style={{ backgroundColor: teamColor }}>
+                  <div className="driver-number">
                     #{driver.number || 'N/A'}
                   </div>
                   
