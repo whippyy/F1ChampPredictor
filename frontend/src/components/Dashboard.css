@@ -122,11 +122,11 @@ body {
   right: 12px;
   width: 36px;
   height: 36px;
-  background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  color: white;
 }
 
 .team-logo {
