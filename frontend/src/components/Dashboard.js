@@ -146,7 +146,7 @@ const Dashboard = () => {
         {drivers.map((driver) => {
             const teamColor = getTeamColor(driver.teamRef);
             const driverImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_auto,w_600/content/dam/fom-website/drivers/2024Drivers/${driver.surname.toLowerCase()}.jpg`;
-            const teamlogoImageUrl = `https://media.formula1.com/content/dam/fom-website/teams/2025/${driver.team}-logo.png`;
+            const teamlogoImageUrl = `https://media.formula1.com/content/dam/fom-website/teams/2025/${driver.teamName}-logo.png`;
             return (
               <motion.div 
                 key={driver.driverId}
@@ -179,7 +179,7 @@ const Dashboard = () => {
                   
                   {driver.teamRef && (
                     <img 
-                      src={`/team-logos/${driver.teamRef}.png`}
+                      src={teamlogoImageUrl}
                       alt={driver.teamName}
                       className="team-logo"
                       onError={(e) => e.target.style.display = 'none'}
