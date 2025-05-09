@@ -129,7 +129,7 @@ body {
 
 .driver-number {
   position: absolute;
-  top: 12px;
+  bottom: 12px;
   right: 12px;
   color: white;
   width: 36px;
