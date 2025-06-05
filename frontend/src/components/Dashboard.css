@@ -197,7 +197,7 @@ body {
   .race-image-container{
   position: relative;
   width: 100%;
-  aspect-ratio: 3/4; /* Standard portrait ratio (adjust as needed) */
+  aspect-ratio: 2; /* Standard portrait ratio (adjust as needed) */
   overflow: hidden; /* Hide any accidental rounded corners */
   }
   /* Force rectangular images */

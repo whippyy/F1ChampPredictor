@@ -207,7 +207,21 @@ const Dashboard = () => {
         <div className="races-timeline">
           {races.map((race) => {
             const circuit = getCircuitById(race.circuitId);
-            const circuitimageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,w_1440,q_auto/f_auto/q_auto/content/dam/fom-website/2018-redesign-assets/Racehub%20header%20images%2016x9/${circuit.name}`;
+              const getCircuitImageUrl = (circuitName) => {
+                if (!circuitName) return null;
+                
+                // Format circuit name for URL (remove special characters, spaces, etc.)
+                const formattedName = circuitName
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with hyphens
+                  .replace(/-$/, '') // Remove trailing hyphen
+                  .replace(/^-/, ''); // Remove leading hyphen
+                  
+                return `https://media.formula1.com/image/upload/f_auto,c_limit,w_1440,q_auto/content/dam/fom-website/2018-redesign-assets/Racehub%20header%20images%2016x9/${formattedName}.jpg`;
+              };
+
+
+
             return (
               <motion.div 
                 key={race.raceId}
@@ -216,14 +230,14 @@ const Dashboard = () => {
                 transition={{ duration: 0.3 }}
               >
                 <div className="race-image-container">
-                  {circuitimageUrl ? (
+                  {circuitImageUrl ? (
                     <img 
-                      src={circuitimageUrl} 
+                      src={circuitImageUrl} 
                       alt={circuit.name}
                       className="race-image"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.style.display = 'none';
+                        e.target.src = `https://via.placeholder.com/600x300/1e1e1e/ffffff?text=${getInitials(circuit.name)}`;
                       }}
                     />
                   ) : (
