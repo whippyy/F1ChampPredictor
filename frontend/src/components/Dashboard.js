@@ -207,6 +207,7 @@ const Dashboard = () => {
         <div className="races-timeline">
           {races.map((race) => {
             const circuit = getCircuitById(race.circuitId);
+            const circuitimageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,w_1440,q_auto/f_auto/q_auto/content/dam/fom-website/2018-redesign-assets/Racehub%20header%20images%2016x9/${circuit.name}`;
             return (
               <motion.div 
                 key={race.raceId}
@@ -215,9 +216,9 @@ const Dashboard = () => {
                 transition={{ duration: 0.3 }}
               >
                 <div className="race-image-container">
-                  {circuit.imageUrl ? (
+                  {circuitimageUrl ? (
                     <img 
-                      src={circuit.imageUrl} 
+                      src={circuitimageUrl} 
                       alt={circuit.name}
                       className="race-image"
                       onError={(e) => {
