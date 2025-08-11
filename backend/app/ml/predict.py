@@ -28,32 +28,7 @@ scaler = joblib.load(SCALER_PATH) if os.path.exists(SCALER_PATH) else None
 
 current_year = 2024
 
-def get_track_features(circuit_id):
-    """Extract track-specific characteristics"""
-    circuit = circuits_df[circuits_df["circuitId"] == circuit_id].iloc[0]
-    
-    # Get historical data for this circuit
-    circuit_races = races_df[races_df["circuitId"] == circuit_id]
-    circuit_results = results_df[results_df["raceId"].isin(circuit_races["raceId"])]
-    
-    # Calculate track-specific stats
-    if not circuit_results.empty:
-        avg_pit_stops = pit_stops_df[pit_stops_df["raceId"].isin(circuit_races["raceId"])]["stop"].mean()
-        avg_lap_time = lap_times_df[lap_times_df["raceId"].isin(circuit_races["raceId"])]["milliseconds"].mean()
-        overtaking_factor = circuit_results.groupby("grid")["position"].mean().diff().mean()  # Avg position change
-    else:
-        avg_pit_stops = 2.0
-        avg_lap_time = 90000
-        overtaking_factor = 0.5
-    
-    return {
-        "circuit_length": circuit.get("length", 5000),
-        "circuit_corners": circuit.get("corners", 12),
-        "circuit_altitude": circuit.get("altitude", 200),
-        "circuit_avg_pit_stops": avg_pit_stops,
-        "circuit_avg_lap_time": avg_lap_time,
-        "circuit_overtaking_factor": overtaking_factor
-    }
+
 
 def get_driver_track_history(driver_id, circuit_id):
     """Get driver's historical performance at this track"""
