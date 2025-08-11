@@ -1,42 +1,20 @@
-from fastapi import APIRouter
-from app.data_loader import load_csv_data
-from pydantic import BaseModel
-
-# Define response model
-class CircuitResponse(BaseModel):
-    message: str
-    data: list
+from fastapi import APIRouter, HTTPException
+from app.data_loader import f1_data
+from app.schemas import Circuit
+from typing import List
 
 router = APIRouter()
 
-@router.get("/circuits", tags=["Data Fetching"], response_model=CircuitResponse)
-def get_current_circuits():
+@router.get("/circuits", response_model=List[Circuit], tags=["Data Fetching"])
+def get_current_circuits() -> List[Circuit]:
     """Fetch the circuits used in the current season."""
     try:
-        data = load_csv_data()
-        circuits_df = data["circuits"]
-        races_df = data["races"]
-
-        # ✅ Get the most recent season
-        current_season = races_df["year"].max()
-
-        # ✅ Get all circuits used in the most recent season
-        current_season_race_ids = races_df[races_df["year"] == current_season]["raceId"]
-        current_circuit_ids = races_df[races_df["raceId"].isin(current_season_race_ids)]["circuitId"].unique()
+        circuits_df = f1_data.data["circuits"]
+        current_circuit_ids = f1_data.current_circuit_ids
 
         # ✅ Filter circuits based on the current season
         filtered_circuits = circuits_df[circuits_df["circuitId"].isin(current_circuit_ids)]
 
-        return {
-            "message": "Current season circuits fetched successfully",
-            "data": filtered_circuits.to_dict(orient="records")
-        }
+        return filtered_circuits.to_dict(orient="records")
     except Exception as e:
-        return {"message": f"Error fetching circuits: {str(e)}", "data": []}
-
-
-
-
-
-
-
+        raise HTTPException(status_code=500, detail=f"Error fetching circuits: {str(e)}")

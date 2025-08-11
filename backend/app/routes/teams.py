@@ -1,31 +1,19 @@
-from fastapi import APIRouter
-from app.data_loader import load_csv_data
+from fastapi import APIRouter, HTTPException
+from app.data_loader import f1_data
+from app.schemas import Team
+from typing import List
 
 router = APIRouter()
 
-@router.get("/teams")
-def get_current_teams():
+@router.get("/teams", response_model=List[Team], tags=["Data Fetching"])
+def get_current_teams() -> List[Team]:
     """Fetch all teams (constructors) that participated in the current season."""
-    data = load_csv_data()
-    constructors_df = data["constructors"]
-    results_df = data["results"]
-    races_df = data["races"]
+    try:
+        constructors_df = f1_data.data["constructors"]
+        current_teams_ids = f1_data.current_constructor_ids
 
-    # Get the most recent season
-    current_season = races_df["year"].max()
+        filtered_teams = constructors_df[constructors_df["constructorId"].isin(current_teams_ids)]
 
-    # Get all teams that participated in the most recent season
-    current_season_race_ids = races_df[races_df["year"] == current_season]["raceId"]
-    current_teams = results_df[results_df["raceId"].isin(current_season_race_ids)]["constructorId"].unique()
-
-    filtered_teams = constructors_df[constructors_df["constructorId"].isin(current_teams)]
-
-    return {
-        "message": "Current season teams fetched successfully",
-        "data": filtered_teams.to_dict(orient="records")
-    }
-
-
-
-
-
+        return filtered_teams.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching teams: {str(e)}")

@@ -1,5 +1,6 @@
 import pandas as pd
 import joblib
+import logging
 from pathlib import Path
 
 class F1DataLoader:
@@ -14,7 +15,7 @@ class F1DataLoader:
     def _load_data(self):
         # Point to the correct data directory
         data_dir = Path(__file__).parent / "data"
-        print(f"Loading data from: {data_dir}")
+        logging.info(f"Loading data from: {data_dir}")
         self.data = {
             "drivers": pd.read_csv(data_dir / "drivers.csv"),
             "circuits": pd.read_csv(data_dir / "circuits.csv"),
@@ -27,13 +28,27 @@ class F1DataLoader:
             "standings": pd.read_csv(data_dir / "constructor_standings.csv"),
             "constructors": pd.read_csv(data_dir / "constructors.csv")
         }
-        # Debug: Print loaded driver IDs
-        print(f"Loaded {len(self.data['drivers'])} drivers")
-        print("Sample drivers:", self.data['drivers']['driverId'].head().tolist())
         
-        # Pre-compute useful views
-        self.current_year = 2024
-        self.current_races = self.data["races"][self.data["races"]["year"] == self.current_year]
+        # Pre-compute useful data for the current season
+        self.current_year = self.data["races"]["year"].max()
+        
+        self.current_races_df = self.data["races"][self.data["races"]["year"] == self.current_year]
+        self.current_race_ids = self.current_races_df["raceId"].unique()
+        
+        current_results_df = self.data["results"][self.data["results"]["raceId"].isin(self.current_race_ids)]
+        
+        self.current_driver_ids = current_results_df["driverId"].unique()
+        self.current_constructor_ids = current_results_df["constructorId"].unique()
+        self.current_circuit_ids = self.current_races_df["circuitId"].unique()
+
+        # Create a mapping of driverId to their latest constructorId for the current season
+        last_driver_results = current_results_df.sort_values("raceId").drop_duplicates("driverId", keep="last")
+        self.driver_team_map = pd.Series(
+            last_driver_results.constructorId.values, 
+            index=last_driver_results.driverId
+        ).to_dict()
+
+        logging.info(f"Data loaded for current year: {self.current_year}")
 
 # Global instance
 f1_data = F1DataLoader()
