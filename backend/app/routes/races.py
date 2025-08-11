@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
 from app.data_loader import f1_data
 from app.schemas import Race
+import pandas as pd
 from typing import List
 
 router = APIRouter()
@@ -18,4 +19,5 @@ def get_races(season: int = Query(..., description="F1 season year")) -> List[Ra
             return []
 
         # Replace NaN values with None for Pydantic compatibility
-        season_races = season_races.where
+        season_races = season_races.where(pd.notna(season_races), None)
+        return season_races.to_dict(orient="records")
